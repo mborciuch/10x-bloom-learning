@@ -25,7 +25,7 @@ Głównym problemem, który rozwiązuje Bloom Learning, jest nieefektywność i 
 ### 3.3. Generowanie "Powtórek" przez AI
 - Użytkownik może zainicjować proces generowania "Powtórek" dla wybranego "Planu Nauki".
 - Użytkownik musi określić liczbę "Powtórek" do wygenerowania oraz wybrać poziomy taksonomii Blooma, które mają być uwzględnione.
-- System wysyła do AI jedno, złożone zapytanie zawierające materiał tekstowy, wybrane poziomy, listę predefiniowanych typów ćwiczeń i instrukcje dotyczące formatu odpowiedzi (JSON) oraz interpretacji fragmentów kodu.
+- System wysyła do AI jedno, złożone zapytanie zawierające materiał tekstowy, wybrane poziomy, listę predefiniowanych typów ćwiczeń i instrukcje dotyczące formatu odpowiedzi (JSON) 
 - Po otrzymaniu odpowiedzi od AI, system prezentuje użytkownikowi proponowany plan "Powtórek" w widoku kalendarza.
 - Użytkownik ma możliwość edycji treści i daty każdej wygenerowanej "Powtórki" oraz usuwania poszczególnych "Powtórek" z planu.
 - Użytkownik musi ostatecznie zaakceptować plan za pomocą dedykowanego przycisku, co zapisuje "Powtórki" w bazie danych.
@@ -34,7 +34,7 @@ Głównym problemem, który rozwiązuje Bloom Learning, jest nieefektywność i 
 ### 3.4. Manualne tworzenie "Powtórek"
 - Użytkownik może manualnie dodać nową "Powtórkę" w widoku kalendarza.
 - Podczas dodawania, użytkownik wybiera datę oraz typ ćwiczenia.
-- Użytkownik może wybrać typ ćwiczenia z predefiniowanej listy (zahardkodowanej w systemie) lub stworzyć całkowicie własne polecenie tekstowe.
+- Użytkownik może wybrać typ ćwiczenia z predefiniowanej listy (istniejące rekordy w) lub stworzyć całkowicie własne polecenie tekstowe.
 - System musi rozróżniać w bazie danych, czy ćwiczenie jest "predefiniowane" czy "własne".
 
 ### 3.5. Interfejs nauki
