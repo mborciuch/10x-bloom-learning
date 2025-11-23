@@ -5,6 +5,8 @@ import type { Enums, Tables, TablesInsert, TablesUpdate } from "./db/database.ty
 // ============================================================================
 // Base entity types extracted from database schema for reuse in DTOs
 
+type AuthUserRow = Tables<{ schema: "auth" }, "users">;
+
 type StudyPlanRow = Tables<"study_plans">;
 type StudyPlanInsert = TablesInsert<"study_plans">;
 type StudyPlanUpdate = TablesUpdate<"study_plans">;
@@ -21,9 +23,6 @@ type ReviewSessionUpdate = TablesUpdate<"review_sessions">;
 
 type ReviewSessionFeedbackRow = Tables<"review_session_feedback">;
 type ReviewSessionFeedbackInsert = TablesInsert<"review_session_feedback">;
-
-type ProfileRow = Tables<"profiles">;
-type ProfileUpdate = TablesUpdate<"profiles">;
 
 // Database enums
 type TaxonomyLevel = Enums<"taxonomy_level">;
@@ -79,7 +78,6 @@ export interface StudyPlanDetailsDto extends StudyPlanListItemDto {
 export interface CreateStudyPlanCommand {
   title: NonNullable<StudyPlanInsert["title"]>;
   sourceMaterial: NonNullable<StudyPlanInsert["source_material"]>;
-  wordCount: NonNullable<StudyPlanInsert["word_count"]>;
 }
 
 /**
@@ -292,7 +290,7 @@ export interface CompleteReviewSessionCommand {
 export interface ReviewSessionFeedbackDto {
   id: ReviewSessionFeedbackRow["id"];
   reviewSessionId: ReviewSessionFeedbackRow["review_session_id"];
-  userId: ReviewSessionFeedbackRow["user_id"];
+  userId: AuthUserRow["id"];
   rating: ReviewSessionFeedbackRow["rating"];
   comment: ReviewSessionFeedbackRow["comment"];
   createdAt: ReviewSessionFeedbackRow["created_at"];
@@ -306,34 +304,6 @@ export interface SubmitReviewSessionFeedbackCommand {
   rating: NonNullable<ReviewSessionFeedbackInsert["rating"]>;
   comment?: ReviewSessionFeedbackInsert["comment"];
 }
-
-// ============================================================================
-// PROFILE
-// ============================================================================
-
-/**
- * Profile DTO for GET /api/profile
- * User profile information including onboarding status
- */
-export interface ProfileDto {
-  id: ProfileRow["id"];
-  displayName: ProfileRow["display_name"];
-  timezone: ProfileRow["timezone"];
-  onboardingCompletedAt: ProfileRow["onboarding_completed_at"];
-  createdAt: ProfileRow["created_at"];
-  updatedAt: ProfileRow["updated_at"];
-}
-
-/**
- * Command for PATCH /api/profile
- * Updates profile with optional onboarding completion flag
- */
-export type UpdateProfileCommand = Partial<{
-  displayName: ProfileUpdate["display_name"];
-  timezone: ProfileUpdate["timezone"];
-}> & {
-  markOnboardingComplete?: boolean;
-};
 
 // ============================================================================
 // METRICS

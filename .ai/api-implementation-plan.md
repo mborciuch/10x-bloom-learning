@@ -9,11 +9,13 @@
 3. [AI Generation Endpoints](#3-ai-generation-endpoints)
 4. [Review Sessions Endpoints](#4-review-sessions-endpoints)
 5. [Metrics Endpoints](#5-metrics-endpoints)
-6. [Profile Endpoints](#6-profile-endpoints)
-7. [Wspólne wymagania](#7-wspólne-wymagania)
-8. [Architektura serwisów](#8-architektura-serwisów)
-9. [Obsługa błędów](#9-obsługa-błędów)
-10. [Bezpieczeństwo i wydajność](#10-bezpieczeństwo-i-wydajność)
+6. [Wspólne wymagania](#6-wspólne-wymagania)
+7. [Architektura serwisów](#7-architektura-serwisów)
+8. [Obsługa błędów](#8-obsługa-błędów)
+9. [Bezpieczeństwo i wydajność](#9-bezpieczeństwo-i-wydajność)
+10. [Kolejność implementacji](#10-kolejność-implementacji)
+11. [Przykład kompletnego endpointu](#11-przykład-kompletnego-endpointu)
+12. [Checklist implementacji](#12-checklist-implementacji)
 
 ---
 
@@ -870,82 +872,7 @@ GROUP BY study_plan_id
 
 ---
 
-## 6. Profile Endpoints
-
-### 6.1. GET /api/profile
-
-**Przegląd:** Zwraca profil zalogowanego użytkownika.
-
-**Response:**
-
-- Status: `200 OK`
-- Body: `ProfileDto`
-
-**Przepływ danych:**
-
-1. Pobierz `user_id` z auth
-2. SELECT z `profiles` WHERE `id = user_id`
-3. Jeśli nie istnieje: lazy create (INSERT z defaults)
-4. Return profile
-
-**Lazy Creation:**
-
-- Triggered on first GET after signup
-- Default values: all nullable fields = null
-
-**Obsługa błędów:**
-
-- `401 Unauthorized`
-
-**Kroki implementacji:**
-
-1. `/src/pages/api/profile/index.ts`
-2. `ProfileService.getOrCreate(userId)`
-3. Lazy creation logic
-
----
-
-### 6.2. PATCH /api/profile
-
-**Przegląd:** Aktualizuje profil użytkownika.
-
-**Request:**
-
-- Body: `UpdateProfileCommand`
-
-**Walidacja:**
-
-- `displayName`: optional, 1-120 chars
-- `timezone`: optional, valid IANA timezone
-- `markOnboardingComplete`: boolean, sets `onboarding_completed_at = now()`
-
-**Przepływ danych:**
-
-1. Validate fields
-2. Partial update
-3. If `markOnboardingComplete = true`: SET `onboarding_completed_at = now()`
-4. Return updated profile
-
-**Timezone validation:**
-
-```typescript
-import { isValidTimezone } from "some-lib"; // e.g., moment-timezone
-```
-
-**Obsługa błędów:**
-
-- `400` - invalid timezone, displayName too long
-- `401`
-
-**Kroki implementacji:**
-
-1. Zod schema with conditional onboarding logic
-2. Timezone validation helper
-3. `ProfileService.update(userId, command)`
-
----
-
-## 7. Wspólne wymagania
+## 6. Wspólne wymagania
 
 ### 7.1. Astro Endpoint Structure
 
@@ -1024,9 +951,9 @@ Standardowy format błędów:
 
 ---
 
-## 8. Architektura serwisów
+## 7. Architektura serwisów
 
-### 8.1. Service Structure
+### 7.1. Service Structure
 
 Utwórz serwisy w `/src/lib/services/`:
 
@@ -1035,7 +962,7 @@ Utwórz serwisy w `/src/lib/services/`:
 - `ai-generation.service.ts`
 - `review-session.service.ts`
 - `metrics.service.ts`
-- `profile.service.ts`
+- `user-metadata.service.ts`
 
 **Pattern:**
 
@@ -1079,7 +1006,7 @@ export const GET: APIRoute = async (context) => {
 };
 ```
 
-### 8.2. Mapping Functions
+### 7.2. Mapping Functions
 
 Utwórz mappers w `/src/lib/mappers/`:
 
@@ -1105,7 +1032,7 @@ export function mapToStudyPlanListItemDto(
 }
 ```
 
-### 8.3. Helper Functions
+### 7.3. Helper Functions
 
 Utwórz helpers w `/src/lib/utils/`:
 
@@ -1141,9 +1068,9 @@ export function buildPaginatedResponse<T>(items: T[], total: number, page: numbe
 
 ---
 
-## 9. Obsługa błędów
+## 8. Obsługa błędów
 
-### 9.1. Error Codes
+### 8.1. Error Codes
 
 Standardowe kody błędów:
 
@@ -1155,7 +1082,7 @@ Standardowe kody błędów:
 - `UNPROCESSABLE_ENTITY` - 422
 - `INTERNAL_SERVER_ERROR` - 500
 
-### 9.2. Error Handler
+### 8.2. Error Handler
 
 ```typescript
 // src/lib/utils/error-handler.ts
@@ -1251,9 +1178,9 @@ function isPostgrestError(error: unknown): error is PostgrestError {
 
 ---
 
-## 10. Bezpieczeństwo i wydajność
+## 9. Bezpieczeństwo i wydajność
 
-### 10.1. Bezpieczeństwo
+### 9.1. Bezpieczeństwo
 
 **Authentication:**
 
@@ -1273,7 +1200,7 @@ function isPostgrestError(error: unknown): error is PostgrestError {
 - Sanitize przed zapisem do DB (especially AI prompts)
 - Limit payload size: max 200KB dla sourceMaterial
 
-### 10.2. Wydajność
+### 9.2. Wydajność
 
 **Database:**
 
@@ -1293,7 +1220,7 @@ function isPostgrestError(error: unknown): error is PostgrestError {
 - Batch operations where possible
 - Async AI generation (202 Accepted pattern)
 
-### 10.3. Monitoring
+### 9.3. Monitoring
 
 **Logging:**
 
@@ -1310,13 +1237,13 @@ function isPostgrestError(error: unknown): error is PostgrestError {
 
 ---
 
-## 11. Kolejność implementacji
+## 10. Kolejność implementacji
 
 Rekomendowana kolejność (MVP first):
 
 ### Faza 1: Core (MVP)
 
-1. **Profile endpoints** - fundament auth
+1. **User metadata endpoints** - fundament auth
 2. **Study Plans** - główny zasób
 3. **Exercise Templates GET** - potrzebne dla sesji
 
@@ -1343,7 +1270,7 @@ Rekomendowana kolejność (MVP first):
 
 ---
 
-## 12. Przykład kompletnego endpointu
+## 11. Przykład kompletnego endpointu
 
 ### Przykład: POST /api/study-plans
 
@@ -1481,7 +1408,7 @@ export class StudyPlanService {
 
 ---
 
-## 13. Checklist implementacji
+## 12. Checklist implementacji
 
 Dla każdego endpointu:
 

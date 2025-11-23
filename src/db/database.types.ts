@@ -18,6 +18,110 @@ export interface Database {
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
+  auth: {
+    Tables: {
+      users: {
+        Row: {
+          id: string;
+          email: string | null;
+          phone: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+          app_metadata: Json | null;
+          user_metadata: Json | null;
+          confirmation_sent_at: string | null;
+          confirmation_token: string | null;
+          recovery_sent_at: string | null;
+          recovery_token: string | null;
+          email_change_sent_at: string | null;
+          new_email: string | null;
+          email_change_token_new: string | null;
+          email_change_token_current: string | null;
+          phone_change_sent_at: string | null;
+          new_phone: string | null;
+          phone_change_token: string | null;
+          is_super_admin: boolean | null;
+          role: string | null;
+          aud: string | null;
+          email_confirmed_at: string | null;
+          phone_confirmed_at: string | null;
+          last_sign_in_at: string | null;
+          raw_user_meta_data: Json | null;
+          raw_app_meta_data: Json | null;
+          reauthentication_sent_at: string | null;
+          reauthentication_token: string | null;
+          factors: Json | null;
+        };
+        Insert: {
+          id?: string;
+          email?: string | null;
+          phone?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          app_metadata?: Json | null;
+          user_metadata?: Json | null;
+          confirmation_sent_at?: string | null;
+          confirmation_token?: string | null;
+          recovery_sent_at?: string | null;
+          recovery_token?: string | null;
+          email_change_sent_at?: string | null;
+          new_email?: string | null;
+          email_change_token_new?: string | null;
+          email_change_token_current?: string | null;
+          phone_change_sent_at?: string | null;
+          new_phone?: string | null;
+          phone_change_token?: string | null;
+          is_super_admin?: boolean | null;
+          role?: string | null;
+          aud?: string | null;
+          email_confirmed_at?: string | null;
+          phone_confirmed_at?: string | null;
+          last_sign_in_at?: string | null;
+          raw_user_meta_data?: Json | null;
+          raw_app_meta_data?: Json | null;
+          reauthentication_sent_at?: string | null;
+          reauthentication_token?: string | null;
+          factors?: Json | null;
+        };
+        Update: {
+          id?: string;
+          email?: string | null;
+          phone?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          app_metadata?: Json | null;
+          user_metadata?: Json | null;
+          confirmation_sent_at?: string | null;
+          confirmation_token?: string | null;
+          recovery_sent_at?: string | null;
+          recovery_token?: string | null;
+          email_change_sent_at?: string | null;
+          new_email?: string | null;
+          email_change_token_new?: string | null;
+          email_change_token_current?: string | null;
+          phone_change_sent_at?: string | null;
+          new_phone?: string | null;
+          phone_change_token?: string | null;
+          is_super_admin?: boolean | null;
+          role?: string | null;
+          aud?: string | null;
+          email_confirmed_at?: string | null;
+          phone_confirmed_at?: string | null;
+          last_sign_in_at?: string | null;
+          raw_user_meta_data?: Json | null;
+          raw_app_meta_data?: Json | null;
+          reauthentication_sent_at?: string | null;
+          reauthentication_token?: string | null;
+          factors?: Json | null;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<never, never>;
+    Functions: Record<never, never>;
+    Enums: Record<never, never>;
+    CompositeTypes: Record<never, never>;
+  };
   public: {
     Tables: {
       ai_generation_log: {
@@ -69,8 +173,9 @@ export interface Database {
             foreignKeyName: "ai_generation_log_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "users";
             referencedColumns: ["id"];
+            referencedSchema: "auth";
           },
         ];
       };
@@ -119,37 +224,11 @@ export interface Database {
             foreignKeyName: "exercise_templates_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "users";
             referencedColumns: ["id"];
+            referencedSchema: "auth";
           },
         ];
-      };
-      profiles: {
-        Row: {
-          created_at: string;
-          display_name: string | null;
-          id: string;
-          onboarding_completed_at: string | null;
-          timezone: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          display_name?: string | null;
-          id: string;
-          onboarding_completed_at?: string | null;
-          timezone?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          display_name?: string | null;
-          id?: string;
-          onboarding_completed_at?: string | null;
-          timezone?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
       };
       review_session_feedback: {
         Row: {
@@ -188,8 +267,9 @@ export interface Database {
             foreignKeyName: "review_session_feedback_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "users";
             referencedColumns: ["id"];
+            referencedSchema: "auth";
           },
         ];
       };
@@ -277,8 +357,9 @@ export interface Database {
             foreignKeyName: "review_sessions_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "users";
             referencedColumns: ["id"];
+            referencedSchema: "auth";
           },
         ];
       };
@@ -318,8 +399,9 @@ export interface Database {
             foreignKeyName: "study_plans_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "users";
             referencedColumns: ["id"];
+            referencedSchema: "auth";
           },
         ];
       };

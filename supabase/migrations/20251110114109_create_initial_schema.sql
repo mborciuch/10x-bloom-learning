@@ -1,6 +1,6 @@
 -- migration: create initial bloom learning schema
 -- description: create core study planning tables, supporting enums, indexes, triggers, and row level security policies
--- tables: public.profiles, public.study_plans, public.exercise_templates, public.ai_generation_log, public.review_sessions, public.review_session_feedback
+-- tables: public.study_plans, public.exercise_templates, public.ai_generation_log, public.review_sessions, public.review_session_feedback
 -- enums: public.taxonomy_level, public.review_status, public.ai_generation_state
 -- notes: ensure pgcrypto extension for uuid generation and document all security controls
 
@@ -22,20 +22,10 @@ begin
 end;
 $$ language plpgsql;
 
--- table storing profile metadata mapped 1:1 with auth.users
-create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  display_name text,
-  timezone text,
-  onboarding_completed_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 -- table describing user-authored study plans
 create table if not exists public.study_plans (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
   source_material text not null,
   word_count integer not null,
@@ -52,7 +42,7 @@ create table if not exists public.exercise_templates (
   prompt text not null,
   default_taxonomy_level public.taxonomy_level,
   is_predefined boolean not null default false,
-  created_by uuid references public.profiles (id) on delete set null,
+  created_by uuid references auth.users (id) on delete set null,
   is_active boolean not null default true,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -64,7 +54,7 @@ create table if not exists public.exercise_templates (
 create table if not exists public.ai_generation_log (
   id uuid primary key default gen_random_uuid(),
   study_plan_id uuid not null references public.study_plans (id) on delete cascade,
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
   requested_at timestamptz not null default now(),
   model_name text,
   parameters jsonb not null,
@@ -78,7 +68,7 @@ create table if not exists public.ai_generation_log (
 create table if not exists public.review_sessions (
   id uuid primary key default gen_random_uuid(),
   study_plan_id uuid not null references public.study_plans (id) on delete cascade,
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
   exercise_template_id uuid references public.exercise_templates (id) on delete set null,
   ai_generation_log_id uuid references public.ai_generation_log (id) on delete set null,
   exercise_label text not null,
@@ -99,17 +89,11 @@ create table if not exists public.review_sessions (
 create table if not exists public.review_session_feedback (
   id uuid primary key default gen_random_uuid(),
   review_session_id uuid not null references public.review_sessions (id) on delete cascade,
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
   rating smallint check (rating between 1 and 5),
   comment text,
   created_at timestamptz not null default now()
 );
-
--- attach timestamp triggers to tables maintaining updated_at
-create trigger set_profiles_updated_at
-before update on public.profiles
-for each row
-execute function public.set_updated_at();
 
 create trigger set_study_plans_updated_at
 before update on public.study_plans
@@ -134,56 +118,11 @@ create unique index idx_exercise_templates_predefined_name on public.exercise_te
 create index idx_ai_generation_log_plan_requested on public.ai_generation_log (study_plan_id, requested_at desc);
 create index idx_review_session_feedback_session on public.review_session_feedback (review_session_id);
 
--- enable row level security to isolate user-specific data
-alter table public.profiles enable row level security;
 alter table public.study_plans enable row level security;
 alter table public.exercise_templates enable row level security;
 alter table public.ai_generation_log enable row level security;
 alter table public.review_sessions enable row level security;
 alter table public.review_session_feedback enable row level security;
-
--- row level security policies for table public.profiles
-create policy profiles_select_authenticated on public.profiles
-  for select
-  to authenticated
-  using (id = auth.uid());
-
-create policy profiles_select_anon on public.profiles
-  for select
-  to anon
-  using (false);
-
-create policy profiles_insert_authenticated on public.profiles
-  for insert
-  to authenticated
-  with check (id = auth.uid());
-
-create policy profiles_insert_anon on public.profiles
-  for insert
-  to anon
-  with check (false);
-
-create policy profiles_update_authenticated on public.profiles
-  for update
-  to authenticated
-  using (id = auth.uid())
-  with check (id = auth.uid());
-
-create policy profiles_update_anon on public.profiles
-  for update
-  to anon
-  using (false)
-  with check (false);
-
-create policy profiles_delete_authenticated on public.profiles
-  for delete
-  to authenticated
-  using (id = auth.uid());
-
-create policy profiles_delete_anon on public.profiles
-  for delete
-  to anon
-  using (false);
 
 -- row level security policies for table public.study_plans
 create policy study_plans_select_authenticated on public.study_plans

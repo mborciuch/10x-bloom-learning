@@ -2,13 +2,12 @@
 
 ## 1. Zasoby
 
-- `profiles` → `profiles`
 - `studyPlans` → `study_plans`
 - `exerciseTemplates` → `exercise_templates`
 - `aiGenerations` → `ai_generation_log`
 - `reviewSessions` → `review_sessions`
 - `reviewSessionFeedback` → `review_session_feedback`
-- `auth` (delegated) → Supabase Auth service
+- `auth` (user metadata) → Supabase Auth `auth.users` (pole `user_metadata`)
 
 ## 2. Endpoints
 
@@ -391,7 +390,7 @@
 
 ### Onboarding
 
-Handled via `GET/PATCH /api/profile`; frontend checks `onboardingCompletedAt`.
+Przechowywane w `auth.users.user_metadata.onboardingCompletedAt`; frontend odczytuje oraz aktualizuje dane bezpośrednio przez Supabase Auth.
 
 ## 3. Authentication and Authorization
 
@@ -404,12 +403,12 @@ Handled via `GET/PATCH /api/profile`; frontend checks `onboardingCompletedAt`.
 
 ## 4. Walidacja i logika biznesowa
 
-### Profiles
+### User Metadata (Supabase Auth)
 
-- `displayName` length (1-120), optional.
-- `timezone` must be valid IANA timezone if provided.
-- `markOnboardingComplete` sets `onboarding_completed_at` to current timestamp.
-- Ensure profile exists for authenticated user; create lazily after signup if absent.
+- `displayName` przechowywany w `auth.users.user_metadata.displayName` (1-120 znaków, opcjonalnie).
+- `timezone` zapisywany w `auth.users.user_metadata.timezone`; waliduj względem listy stref IANA.
+- `onboardingCompletedAt` ustawiany w metadanych użytkownika (ISO string) podczas zakończenia onboardingu.
+- Aktualizacje wykonuj przez `supabase.auth.updateUser`, bez tworzenia rekordów w dodatkowych tabelach.
 
 ### Study Plans
 

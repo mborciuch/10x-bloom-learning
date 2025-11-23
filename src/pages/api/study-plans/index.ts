@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
+import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { StudyPlanService } from "@/lib/services/study-plan.service";
 import { CreateStudyPlanSchema } from "@/lib/validation/study-plan.schema";
 import { handleError } from "@/lib/utils/error-handler";
@@ -11,25 +12,7 @@ const JSON_HEADERS = {
 
 export const POST: APIRoute = async (context) => {
   const supabase = context.locals.supabase;
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return new Response(
-      JSON.stringify({
-        error: {
-          code: "UNAUTHORIZED",
-          message: "Authentication required",
-        },
-      }),
-      {
-        status: 401,
-        headers: JSON_HEADERS,
-      }
-    );
-  }
+  const userId = DEFAULT_USER_ID;
 
   let body: unknown;
   try {
@@ -69,7 +52,7 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const service = new StudyPlanService(supabase);
-    const result = await service.create(user.id, validationResult.data);
+    const result = await service.create(userId, validationResult.data);
 
     return new Response(JSON.stringify(result), {
       status: 201,
