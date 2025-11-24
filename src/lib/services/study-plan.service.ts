@@ -1,11 +1,23 @@
 import type { SupabaseClient } from "@/db/supabase.client";
-import type { CreateStudyPlanCommand, StudyPlanListItemDto } from "@/types";
+import type { CreateStudyPlanCommand, Paginated, StudyPlanListItemDto } from "@/types";
 import { mapToStudyPlanListItemDto } from "@/lib/mappers/study-plan.mapper";
 import { ApiError } from "@/lib/utils/error-handler";
 import { countWords } from "@/lib/utils/word-count";
 
 const MIN_WORD_COUNT = 200;
 const MAX_WORD_COUNT = 5000;
+
+type StudyPlanSortField = "created_at" | "updated_at" | "title";
+type StudyPlanSortOrder = "asc" | "desc";
+
+export interface ListStudyPlansOptions {
+  status?: "active" | "archived";
+  search?: string;
+  page: number;
+  pageSize: number;
+  sort: StudyPlanSortField;
+  sortOrder: StudyPlanSortOrder;
+}
 
 export class StudyPlanService {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -55,5 +67,57 @@ export class StudyPlanService {
     }
 
     return mapToStudyPlanListItemDto(data, false);
+  }
+
+  async list(userId: string, options: ListStudyPlansOptions): Promise<Paginated<StudyPlanListItemDto>> {
+    const { page, pageSize, sort, sortOrder, status, search } = options;
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = this.supabase.from("study_plans").select("*", { count: "exact" }).eq("user_id", userId);
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    if (search) {
+      query = query.ilike("title", `%${search}%`);
+    }
+
+    const { data, count, error } = await query.order(sort, { ascending: sortOrder === "asc" }).range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const plans = data ?? [];
+    const planIds = plans.map((plan) => plan.id);
+    const pendingPlanIds = new Set<string>();
+
+    if (planIds.length > 0) {
+      const { data: pendingRows, error: pendingError } = await this.supabase
+        .from("ai_generation_log")
+        .select("study_plan_id")
+        .in("study_plan_id", planIds)
+        .eq("state", "pending");
+
+      if (pendingError) {
+        throw pendingError;
+      }
+
+      for (const row of pendingRows ?? []) {
+        if (row.study_plan_id) {
+          pendingPlanIds.add(row.study_plan_id);
+        }
+      }
+    }
+
+    return {
+      items: plans.map((plan) => mapToStudyPlanListItemDto(plan, pendingPlanIds.has(plan.id))),
+      page,
+      pageSize,
+      total: count ?? plans.length,
+    };
   }
 }
