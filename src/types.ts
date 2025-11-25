@@ -12,8 +12,6 @@ type StudyPlanInsert = TablesInsert<"study_plans">;
 type StudyPlanUpdate = TablesUpdate<"study_plans">;
 
 type ExerciseTemplateRow = Tables<"exercise_templates">;
-type ExerciseTemplateInsert = TablesInsert<"exercise_templates">;
-type ExerciseTemplateUpdate = TablesUpdate<"exercise_templates">;
 
 type AiGenerationLogRow = Tables<"ai_generation_log">;
 
@@ -91,58 +89,24 @@ export type UpdateStudyPlanCommand = Partial<{
 }>;
 
 // ============================================================================
-// EXERCISE TEMPLATES
+// EXERCISE TEMPLATES (PREDEFINED ONLY - READ-ONLY FOR USERS)
 // ============================================================================
 
 /**
- * Exercise template list item DTO for GET /api/exercise-templates
- * Excludes prompt field (only in details)
+ * Exercise template DTO for GET /api/exercise-templates
+ * Represents predefined system templates (no user-created templates in MVP)
+ * Templates are populated via seed data and managed by admins only
  */
-export interface ExerciseTemplateListItemDto {
+export interface ExerciseTemplateDto {
   id: ExerciseTemplateRow["id"];
   name: ExerciseTemplateRow["name"];
   description: ExerciseTemplateRow["description"];
   defaultTaxonomyLevel: ExerciseTemplateRow["default_taxonomy_level"];
-  isPredefined: ExerciseTemplateRow["is_predefined"];
   metadata: ExerciseTemplateRow["metadata"];
   isActive: ExerciseTemplateRow["is_active"];
   createdAt: ExerciseTemplateRow["created_at"];
   updatedAt: ExerciseTemplateRow["updated_at"];
 }
-
-/**
- * Exercise template details DTO for GET /api/exercise-templates/{templateId}
- * Extends list item with prompt and creator information
- */
-export interface ExerciseTemplateDetailsDto extends ExerciseTemplateListItemDto {
-  prompt: ExerciseTemplateRow["prompt"];
-  createdBy: ExerciseTemplateRow["created_by"];
-}
-
-/**
- * Command for POST /api/exercise-templates
- * Creates user-defined exercise template (isPredefined forced to false by backend)
- */
-export interface CreateExerciseTemplateCommand {
-  name: NonNullable<ExerciseTemplateInsert["name"]>;
-  description: ExerciseTemplateInsert["description"];
-  prompt: NonNullable<ExerciseTemplateInsert["prompt"]>;
-  defaultTaxonomyLevel: ExerciseTemplateInsert["default_taxonomy_level"];
-  metadata?: ExerciseTemplateInsert["metadata"];
-}
-
-/**
- * Command for PATCH /api/exercise-templates/{templateId}
- * Allows partial updates of user-owned templates
- */
-export type UpdateExerciseTemplateCommand = Partial<{
-  name: ExerciseTemplateUpdate["name"];
-  description: ExerciseTemplateUpdate["description"];
-  prompt: ExerciseTemplateUpdate["prompt"];
-  defaultTaxonomyLevel: ExerciseTemplateUpdate["default_taxonomy_level"];
-  metadata: ExerciseTemplateUpdate["metadata"];
-  isActive: ExerciseTemplateUpdate["is_active"];
-}>;
 
 // ============================================================================
 // AI GENERATION

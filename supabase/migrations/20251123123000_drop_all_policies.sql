@@ -12,12 +12,6 @@ drop policy if exists study_plans_delete_anon on public.study_plans;
 
 drop policy if exists exercise_templates_select_authenticated on public.exercise_templates;
 drop policy if exists exercise_templates_select_anon on public.exercise_templates;
-drop policy if exists exercise_templates_insert_authenticated on public.exercise_templates;
-drop policy if exists exercise_templates_insert_anon on public.exercise_templates;
-drop policy if exists exercise_templates_update_authenticated on public.exercise_templates;
-drop policy if exists exercise_templates_update_anon on public.exercise_templates;
-drop policy if exists exercise_templates_delete_authenticated on public.exercise_templates;
-drop policy if exists exercise_templates_delete_anon on public.exercise_templates;
 
 drop policy if exists ai_generation_log_select_authenticated on public.ai_generation_log;
 drop policy if exists ai_generation_log_select_anon on public.ai_generation_log;

@@ -97,17 +97,17 @@
 
 ### Exercise Templates
 
-| Method | Path                                   | Description                        |
-| ------ | -------------------------------------- | ---------------------------------- |
-| GET    | `/api/exercise-templates`              | List predefined and user templates |
-| POST   | `/api/exercise-templates`              | Create user template               |
-| GET    | `/api/exercise-templates/{templateId}` | Get template                       |
-| PATCH  | `/api/exercise-templates/{templateId}` | Update (user-owned only)           |
-| DELETE | `/api/exercise-templates/{templateId}` | Soft-delete (user-owned)           |
+**MVP Simplification:** Exercise templates are PREDEFINED ONLY (system-wide, read-only for users).
+Templates with AI prompts are populated via seed data. Users cannot create/edit/delete templates in MVP.
+
+| Method | Path                          | Description                     |
+| ------ | ----------------------------- | ------------------------------- |
+| GET    | `/api/exercise-templates`     | List predefined templates only  |
+| GET    | `/api/exercise-templates/{id}`| Get single template (optional)  |
 
 **GET /api/exercise-templates**
 
-- Query Params: `isPredefined`, `isActive`, `taxonomyLevel`, `search`, `page`, `pageSize`
+- Query Params: `isActive`, `taxonomyLevel`, `search`, `page`, `pageSize`
 - Response:
   ```json
   {
@@ -116,9 +116,7 @@
         "id": "uuid",
         "name": "string",
         "description": "string|null",
-        "prompt": "string",
         "defaultTaxonomyLevel": "remember|understand|...",
-        "isPredefined": true,
         "metadata": {},
         "isActive": true,
         "createdAt": "string",
@@ -127,28 +125,16 @@
     ],
     "page": 1,
     "pageSize": 50,
-    "total": 120
+    "total": 15
   }
   ```
+- Note: `prompt` field exists in DB (populated via seed) but is NOT exposed in API response
+- AI generation backend reads prompts directly from DB when generating sessions
 
-**POST /api/exercise-templates**
+**GET /api/exercise-templates/{templateId}** (Optional)
 
-- Request:
-  ```json
-  {
-    "name": "string",
-    "description": "string|null",
-    "prompt": "string",
-    "defaultTaxonomyLevel": "remember|understand|apply|analyze|evaluate|create",
-    "metadata": {}
-  }
-  ```
-- Response: created resource
-- Constraints: `isPredefined` forced to `false`; `created_by` set to current user
-- Success: `201 Created`
-- Errors: `400` (invalid taxonomy), `409` (duplicate name for user), `401`
-
-**PATCH/DELETE** follow similar structure; `DELETE` returns `204 No Content`.
+- Response: Same as list item
+- Use case: Detail view if needed by frontend
 
 ### AI Generation
 
@@ -421,11 +407,13 @@ Przechowywane w `auth.users.user_metadata.onboardingCompletedAt`; frontend odczy
 
 ### Exercise Templates
 
-- `prompt` non-empty.
-- `defaultTaxonomyLevel` constrained to enum; nullable.
-- `isPredefined` derived from server logic; user cannot change to `true`.
-- Update/delete allowed only when `created_by` equals `auth.uid()`.
-- Soft-delete (set `is_active=false`) recommended to preserve history.
+- **MVP: Predefined only** - no user-created templates
+- `prompt` exists in DB (populated by seed data) but NOT exposed via API
+- `name` unique globally (not per user)
+- `defaultTaxonomyLevel` constrained to enum; nullable
+- `isActive` for soft-delete; managed only by admins via migrations
+- Users have read-only access; no INSERT/UPDATE/DELETE permissions via API
+- AI generation service reads prompts directly from DB internally
 
 ### AI Generation
 

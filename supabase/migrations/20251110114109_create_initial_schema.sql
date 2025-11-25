@@ -3,6 +3,7 @@
 -- tables: public.study_plans, public.exercise_templates, public.ai_generation_log, public.review_sessions, public.review_session_feedback
 -- enums: public.taxonomy_level, public.review_status, public.ai_generation_state
 -- notes: ensure pgcrypto extension for uuid generation and document all security controls
+-- simplified: exercise_templates are PREDEFINED ONLY (no user-created templates in MVP)
 
 -- ensure pgcrypto extension is available for gen_random_uuid function usage
 create extension if not exists "pgcrypto";
@@ -34,20 +35,17 @@ create table if not exists public.study_plans (
   updated_at timestamptz not null default now()
 );
 
--- table storing exercise templates with optional ownership
+-- table storing PREDEFINED exercise templates (system-wide, no user ownership)
+-- simplified for MVP: only admin/seed data can populate this table
 create table if not exists public.exercise_templates (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  name text not null unique,
   description text,
-  prompt text not null,
   default_taxonomy_level public.taxonomy_level,
-  is_predefined boolean not null default false,
-  created_by uuid references auth.users (id) on delete set null,
   is_active boolean not null default true,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  constraint exercise_templates_predefined_check check ((is_predefined and created_by is null) or (not is_predefined and created_by is not null))
+  updated_at timestamptz not null default now()
 );
 
 -- table logging ai generation requests and outcomes
@@ -114,7 +112,6 @@ execute function public.set_updated_at();
 create index idx_review_sessions_user_date on public.review_sessions (user_id, review_date desc);
 create index idx_review_sessions_plan_status on public.review_sessions (study_plan_id, status);
 create unique index idx_study_plans_user_title on public.study_plans (user_id, lower(title));
-create unique index idx_exercise_templates_predefined_name on public.exercise_templates (lower(name)) where is_predefined;
 create index idx_ai_generation_log_plan_requested on public.ai_generation_log (study_plan_id, requested_at desc);
 create index idx_review_session_feedback_session on public.review_session_feedback (review_session_id);
 
@@ -168,50 +165,18 @@ create policy study_plans_delete_anon on public.study_plans
   using (false);
 
 -- row level security policies for table public.exercise_templates
+-- SIMPLIFIED: all authenticated users can read predefined templates, no INSERT/UPDATE/DELETE for users
 create policy exercise_templates_select_authenticated on public.exercise_templates
   for select
   to authenticated
-  using (is_predefined or created_by = auth.uid());
+  using (is_active = true);
 
 create policy exercise_templates_select_anon on public.exercise_templates
   for select
   to anon
   using (false);
 
-create policy exercise_templates_insert_authenticated on public.exercise_templates
-  for insert
-  to authenticated
-  with check (created_by = auth.uid());
-
-create policy exercise_templates_insert_anon on public.exercise_templates
-  for insert
-  to anon
-  with check (false);
-
-create policy exercise_templates_update_authenticated on public.exercise_templates
-  for update
-  to authenticated
-  using (created_by = auth.uid())
-  with check (
-    (created_by = auth.uid() and not is_predefined)
-    or (is_predefined and created_by is null)
-  );
-
-create policy exercise_templates_update_anon on public.exercise_templates
-  for update
-  to anon
-  using (false)
-  with check (false);
-
-create policy exercise_templates_delete_authenticated on public.exercise_templates
-  for delete
-  to authenticated
-  using (created_by = auth.uid() and not is_predefined);
-
-create policy exercise_templates_delete_anon on public.exercise_templates
-  for delete
-  to anon
-  using (false);
+-- No user INSERT/UPDATE/DELETE policies - only service role can manage templates
 
 -- row level security policies for table public.ai_generation_log
 create policy ai_generation_log_select_authenticated on public.ai_generation_log

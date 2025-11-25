@@ -29,21 +29,20 @@
 | created_at | timestamptz | `not null default now()` |
 | updated_at | timestamptz | `not null default now()` |
 
-### Table: exercise_templates
+### Table: exercise_templates (PREDEFINED ONLY - MVP Simplification)
 | Column | Type | Constraints / Default |
 | --- | --- | --- |
 | id | uuid | PK `default gen_random_uuid()` |
-| name | text | `not null` |
+| name | text | `not null unique` (globally unique) |
 | description | text | nullable |
-| prompt | text | `not null` |
+| prompt | text | `not null` (AI prompt, populated via seed, NOT exposed in API) |
 | default_taxonomy_level | taxonomy_level | nullable |
-| is_predefined | boolean | `not null default false` |
-| created_by | uuid | FK → `profiles(id)` `on delete set null` |
 | is_active | boolean | `not null default true` |
 | metadata | jsonb | `not null default '{}'::jsonb` |
 | created_at | timestamptz | `not null default now()` |
 | updated_at | timestamptz | `not null default now()` |
-| CONSTRAINT |  | `check ((is_predefined and created_by is null) or (not is_predefined and created_by is not null))` |
+
+**MVP Note:** Removed `is_predefined` and `created_by` fields. All templates are system-wide predefined templates populated via seed data. Users have read-only access (SELECT only via RLS).
 
 ### Table: ai_generation_log
 | Column | Type | Constraints / Default |
@@ -112,9 +111,10 @@
 - Włączyć RLS na `profiles`, `study_plans`, `exercise_templates`, `ai_generation_log`, `review_sessions`, `review_session_feedback`.
 - Polityka `select/update/delete` na `profiles` ograniczona do `id = auth.uid()`.
 - Polityka na `study_plans` ograniczająca wszystkie operacje do `user_id = auth.uid()`.
-- Polityka na `exercise_templates` pozwalająca:
-  - wszystkim uwierzytelnionym na odczyt rekordów `is_predefined = true`.
-  - właścicielowi (`created_by = auth.uid()`) na odczyt, zapis i usuwanie własnych rekordów.
+- **Polityka na `exercise_templates` (MVP - uproszczona):**
+  - SELECT dla wszystkich authenticated users (WHERE `is_active = true`)
+  - BRAK INSERT/UPDATE/DELETE policies dla users (tylko service role/admins)
+  - Wszystkie templates są predefined, zarządzane przez seed data
 - Polityka na `ai_generation_log` z warunkiem `user_id = auth.uid()`.
 - Polityka na `review_sessions` oraz `review_session_feedback` z warunkiem `user_id = auth.uid()`; dodatkowo pozwolenie na `select` rekordów powiązanych poprzez `study_plans.user_id = auth.uid()` (z widokiem lub `using` + `with check`).
 - Domyślne polityki `with check` zapewniające, że nowe/aktualizowane rekordy posiadają `user_id = auth.uid()` lub inne wymagane klucze.
@@ -123,6 +123,8 @@
 - Utrzymuj spójność `review_sessions.user_id` z `study_plans.user_id` na poziomie aplikacji lub poprzez trigger walidujący.
 - `updated_at` może być odświeżany przy użyciu triggera `moddatetime`.
 - `review_session_feedback` jest opcjonalny; można odłożyć implementację, jeśli analityka jakości nie jest potrzebna w MVP.
-- Predefiniowane rekordy `exercise_templates` powinny być ładowane przez skrypt inicjalizacyjny po migracjach.
+- **Predefiniowane rekordy `exercise_templates` (z promptami AI) muszą być ładowane przez seed migration po utworzeniu tabeli.**
+- **AI generation service czyta `prompt` z DB (nie eksponowany przez API), używa do generowania pytań.**
 - Proces generowania planów AI powinien działać w transakcji, aktualizując `review_sessions.status` oraz `ai_generation_log.state` atomowo.
+- **[FUTURE v2]:** Można przywrócić user-created templates dodając pola `is_predefined`, `created_by` i odpowiednie policies.
 

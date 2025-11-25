@@ -299,14 +299,17 @@
 
 ### 2.1. GET /api/exercise-templates
 
-**Przegląd:** Zwraca listę szablonów ćwiczeń (predefined + user-owned).
+**Przegląd:** Zwraca listę PREDEFINED szablonów ćwiczeń (read-only dla użytkowników).
+
+**UWAGA MVP:** W uproszczonej wersji MVP, użytkownicy NIE mogą tworzyć własnych szablonów.
+Wszystkie szablony są predefined (system-wide) i zarządzane tylko przez admina poprzez seed data.
+AI prompty są hardcoded w backend code, nie przechowywane w DB.
 
 **Request:**
 
 - Metoda: `GET`
 - URL: `/api/exercise-templates`
 - Query params (opcjonalne):
-  - `isPredefined`: boolean
   - `isActive`: boolean (default: true)
   - `taxonomyLevel`: TaxonomyLevel enum
   - `search`: string
@@ -315,118 +318,67 @@
 **Response:**
 
 - Status: `200 OK`
-- Body: `Paginated<ExerciseTemplateListItemDto>`
+- Body: `Paginated<ExerciseTemplateDto>`
 
 **Wykorzystywane typy:**
 
-- `ExerciseTemplateListItemDto` (bez `prompt` - tylko w details)
+- `ExerciseTemplateDto` (z `src/types.ts`)
 - `TaxonomyLevel` enum
 
 **Przepływ danych:**
 
-1. Pobierz user_id
-2. Query: `WHERE (is_predefined = true OR created_by = user_id) AND is_active = ?`
-3. Zastosuj filtry i paginację
-4. Zmapuj do DTO (exclude `prompt`)
+1. Query: `WHERE is_active = ?`
+2. Zastosuj filtry i paginację
+3. Zmapuj do DTO
+4. **Prompt nie jest zwracany** - prompty są w kodzie backendu
 
 **RLS:**
 
-- Predefined templates: dostęp dla wszystkich authenticated
-- User templates: tylko dla `created_by = auth.uid()`
+- Wszystkie authenticated users mogą czytać active templates
+- Brak INSERT/UPDATE/DELETE permissions dla users
 
 **Kroki implementacji:**
 
 1. `/src/pages/api/exercise-templates/index.ts`
-2. `ExerciseTemplateService.list(userId, filters)`
-3. Mapping bez `prompt` field
+2. `ExerciseTemplateService.list(filters)` - no userId needed
+3. Simple read-only endpoint
+
+**AI Prompts Management:**
+
+AI prompty są przechowywane w polu `prompt` w tabeli `exercise_templates` (populated via seed migration).
+Backend czyta prompty bezpośrednio z DB podczas AI generation, ale NIE eksponuje ich przez API endpoint.
+
+```typescript
+// Backend podczas AI generation:
+const template = await supabase.from("exercise_templates").select("prompt").eq("id", templateId).single();
+
+// Użyj template.prompt do wywołania OpenRouter API
+```
 
 ---
 
-### 2.2. POST /api/exercise-templates
+### ~~2.2. POST /api/exercise-templates~~ (REMOVED IN MVP)
 
-**Przegląd:** Tworzy nowy user-defined template.
-
-**Request:**
-
-- Metoda: `POST`
-- Body: `CreateExerciseTemplateCommand`
-
-**Response:**
-
-- Status: `201 Created`
-- Body: `ExerciseTemplateDetailsDto`
-
-**Walidacja biznesowa:**
-
-- `name`: required, non-empty
-- `prompt`: required, non-empty
-- `defaultTaxonomyLevel`: nullable, enum validation
-- `isPredefined`: force to `false` (backend)
-- `created_by`: auto-set to `auth.uid()`
-- Unique `lower(name)` per user
-
-**Obsługa błędów:**
-
-- `400` - invalid taxonomy, empty fields
-- `409` - duplicate name for user
-
-**Kroki implementacji:**
-
-1. Zod schema z enum validation
-2. `ExerciseTemplateService.create(userId, command)`
-3. Force `isPredefined = false`, set `created_by`
+**Usunięte:** Użytkownicy nie mogą tworzyć własnych szablonów w MVP.
 
 ---
 
-### 2.3. GET /api/exercise-templates/[templateId]
+### ~~2.3. GET /api/exercise-templates/[templateId]~~ (OPTIONAL)
 
-**Przegląd:** Zwraca szczegóły szablonu wraz z `prompt`.
-
-**Response:**
-
-- Body: `ExerciseTemplateDetailsDto` (includes `prompt`, `createdBy`)
-
-**RLS:**
-
-- Dostęp: predefined OR owned
-- 404 jeśli brak dostępu
+**Opcjonalne:** Można dodać później jeśli potrzebny detail view.
+Na razie lista templates wystarczy.
 
 ---
 
-### 2.4. PATCH /api/exercise-templates/[templateId]
+### ~~2.4. PATCH /api/exercise-templates/[templateId]~~ (REMOVED IN MVP)
 
-**Przegląd:** Aktualizuje user-owned template.
-
-**Walidacja:**
-
-- Ownership check: `created_by = auth.uid()`
-- Nie pozwól zmienić `isPredefined` na `true`
-
-**Obsługa błędów:**
-
-- `403 Forbidden` - not owner
-- `400` - invalid data
-- `404` - not found
+**Usunięte:** Tylko admini przez seed data/migrations.
 
 ---
 
-### 2.5. DELETE /api/exercise-templates/[templateId]
+### ~~2.5. DELETE /api/exercise-templates/[templateId]~~ (REMOVED IN MVP)
 
-**Przegląd:** Soft-delete (set `is_active = false`).
-
-**Walidacja:**
-
-- Ownership check
-- Soft delete preserves history
-
-**Response:**
-
-- Status: `204 No Content`
-
-**Kroki implementacji:**
-
-1. UPDATE `is_active = false` zamiast DELETE
-2. Ownership check
+**Usunięte:** Tylko admini przez migrations lub UPDATE is_active.
 
 ---
 
@@ -1245,7 +1197,7 @@ Rekomendowana kolejność (MVP first):
 
 1. **User metadata endpoints** - fundament auth
 2. **Study Plans** - główny zasób
-3. **Exercise Templates GET** - potrzebne dla sesji
+3. **Exercise Templates GET** - read-only, predefined templates
 
 ### Faza 2: Sessions
 
@@ -1254,19 +1206,19 @@ Rekomendowana kolejność (MVP first):
 
 ### Faza 3: AI
 
-6. **Exercise Templates POST/PATCH/DELETE** - user templates
-7. **AI Generation initiate** - generowanie
-8. **AI Generation list/get** - monitoring
-9. **AI Generation accept** - workflow completion
+6. **AI Generation initiate** - generowanie (uses hardcoded prompts)
+7. **AI Generation list/get** - monitoring
+8. **AI Generation accept** - workflow completion
 
 ### Faza 4: Analytics
 
-10. **Metrics** - analytics i insights
+9. **Metrics** - analytics i insights
 
 ### Faza 5: Polish
 
-11. Error handling refinement
-12. Performance optimization
+10. Error handling refinement
+11. Performance optimization
+12. **[FUTURE v2]** User-created templates with prompts
 
 ---
 
