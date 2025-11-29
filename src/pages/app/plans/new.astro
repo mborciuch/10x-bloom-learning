@@ -1,0 +1,11 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import { CreatePlanWrapper } from "@/components/study-plans/CreatePlanWrapper";
+
+// Auth check is handled by middleware
+// User will be redirected to login if not authenticated
+---
+
+<AppLayout title="Nowy plan nauki - Bloom Learning">
+  <CreatePlanWrapper client:only="react" />
+</AppLayout>
