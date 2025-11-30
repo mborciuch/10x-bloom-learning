@@ -1,4 +1,4 @@
-import type { ReviewSessionDto, StudyPlanListItemDto, TaxonomyLevel } from "@/types";
+import type { ReviewSessionDto, StudyPlanListItemDto, TaxonomyLevel, ReviewStatus } from "@/types";
 
 /**
  * Calendar View State
@@ -8,6 +8,10 @@ export interface CalendarViewState {
   currentMonth: Date;
   selectedDate: Date | null;
   selectedPlanId: string | null;
+  statusFilter: ReviewStatus | "all";
+  completionFilter: "all" | "completed" | "pending";
+  taxonomyFilter: TaxonomyLevel | "all";
+  aiFilter: "all" | "ai" | "manual";
   isAddSessionModalOpen: boolean;
   isLoading: boolean;
 }
@@ -59,7 +63,15 @@ export interface CalendarHeaderProps {
   onNextMonth: () => void;
   onToday: () => void;
   selectedPlanId: string | null;
-  onFilterChange: (planId: string | null) => void;
+  onPlanFilterChange: (planId: string | null) => void;
+  statusFilter: ReviewStatus | "all";
+  onStatusFilterChange: (status: ReviewStatus | "all") => void;
+  completionFilter: "all" | "completed" | "pending";
+  onCompletionFilterChange: (value: "all" | "completed" | "pending") => void;
+  taxonomyFilter: TaxonomyLevel | "all";
+  onTaxonomyFilterChange: (value: TaxonomyLevel | "all") => void;
+  aiFilter: "all" | "ai" | "manual";
+  onAiFilterChange: (value: "all" | "ai" | "manual") => void;
   studyPlans: StudyPlanListItemDto[];
   canGoPrev: boolean;
   canGoNext: boolean;

@@ -32,7 +32,15 @@ export function CalendarHeader({
   onNextMonth,
   onToday,
   selectedPlanId,
-  onFilterChange,
+  onPlanFilterChange,
+  statusFilter,
+  onStatusFilterChange,
+  completionFilter,
+  onCompletionFilterChange,
+  taxonomyFilter,
+  onTaxonomyFilterChange,
+  aiFilter,
+  onAiFilterChange,
   studyPlans,
   canGoPrev,
   canGoNext,
@@ -73,24 +81,101 @@ export function CalendarHeader({
       </div>
 
       {/* Filter Section */}
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by plan:</span>
-        <Select
-          value={selectedPlanId ?? "all"}
-          onValueChange={(value) => onFilterChange(value === "all" ? null : value)}
-        >
-          <SelectTrigger className="w-full sm:w-[240px]">
-            <SelectValue placeholder="All plans" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All plans</SelectItem>
-            {studyPlans.map((plan) => (
-              <SelectItem key={plan.id} value={plan.id}>
-                {plan.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+        {/* Plan filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Plan:</span>
+          <Select
+            value={selectedPlanId ?? "all"}
+            onValueChange={(value) => onPlanFilterChange(value === "all" ? null : value)}
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All plans" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All plans</SelectItem>
+              {studyPlans.map((plan) => (
+                <SelectItem key={plan.id} value={plan.id}>
+                  {plan.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Status filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => onStatusFilterChange(value as typeof statusFilter)}
+          >
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="proposed">Proposed</SelectItem>
+              <SelectItem value="accepted">Accepted</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Completion filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Completion:</span>
+          <Select
+            value={completionFilter}
+            onValueChange={(value) => onCompletionFilterChange(value as typeof completionFilter)}
+          >
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Taxonomy filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Taxonomy:</span>
+          <Select
+            value={taxonomyFilter}
+            onValueChange={(value) => onTaxonomyFilterChange(value as typeof taxonomyFilter)}
+          >
+            <SelectTrigger className="w-full sm:w-[170px]">
+              <SelectValue placeholder="All levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All levels</SelectItem>
+              <SelectItem value="remember">Remember</SelectItem>
+              <SelectItem value="understand">Understand</SelectItem>
+              <SelectItem value="apply">Apply</SelectItem>
+              <SelectItem value="analyze">Analyze</SelectItem>
+              <SelectItem value="evaluate">Evaluate</SelectItem>
+              <SelectItem value="create">Create</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* AI filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Source:</span>
+          <Select value={aiFilter} onValueChange={(value) => onAiFilterChange(value as typeof aiFilter)}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="ai">AI generated</SelectItem>
+              <SelectItem value="manual">Manual</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </header>
   );

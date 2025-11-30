@@ -35,6 +35,12 @@ export function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"proposed" | "accepted" | "rejected" | "all">("all");
+  const [completionFilter, setCompletionFilter] = useState<"all" | "completed" | "pending">("all");
+  const [taxonomyFilter, setTaxonomyFilter] = useState<
+    "remember" | "understand" | "apply" | "analyze" | "evaluate" | "create" | "all"
+  >("all");
+  const [aiFilter, setAiFilter] = useState<"all" | "ai" | "manual">("all");
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
 
   // Calculate date range for current month view
@@ -42,11 +48,18 @@ export function CalendarView() {
 
   // Fetch sessions for current month and selected plan
   const {
-    data: sessions = [],
+    data: sessionsPage,
     isLoading: isLoadingSessions,
     isError: isSessionsError,
     error: sessionsError,
-  } = useCalendarSessions(dateRange, selectedPlanId);
+  } = useCalendarSessions(dateRange, selectedPlanId, {
+    status: statusFilter === "all" ? undefined : statusFilter,
+    isCompleted: completionFilter === "all" ? undefined : completionFilter === "completed" ? true : false,
+    taxonomyLevel: taxonomyFilter === "all" ? undefined : taxonomyFilter,
+    isAiGenerated: aiFilter === "all" ? undefined : aiFilter === "ai",
+  });
+
+  const sessions = sessionsPage?.items ?? [];
 
   // Group sessions by date
   const sessionsByDate = useMemo(() => groupSessionsByDate(sessions), [sessions]);
@@ -138,7 +151,15 @@ export function CalendarView() {
         onNextMonth={handleNextMonth}
         onToday={handleToday}
         selectedPlanId={selectedPlanId}
-        onFilterChange={setSelectedPlanId}
+        onPlanFilterChange={setSelectedPlanId}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        completionFilter={completionFilter}
+        onCompletionFilterChange={setCompletionFilter}
+        taxonomyFilter={taxonomyFilter}
+        onTaxonomyFilterChange={setTaxonomyFilter}
+        aiFilter={aiFilter}
+        onAiFilterChange={setAiFilter}
         studyPlans={plans || []}
         canGoPrev={canNavigateMonth(currentMonth, "prev")}
         canGoNext={canNavigateMonth(currentMonth, "next")}
