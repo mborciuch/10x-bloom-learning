@@ -305,6 +305,28 @@ export interface AiQualityMetricsDto {
 }
 
 // ============================================================================
+// AI GENERATED SESSIONS SCHEMA (for OpenRouter responses)
+// ============================================================================
+
+/**
+ * Schema dla pojedynczej sesji przeglądowej generowanej przez AI
+ */
+export interface AiGeneratedReviewSessionSchema {
+  questions: string[];
+  answers: string[];
+  hints: string[];
+  taxonomyLevel: TaxonomyLevel;
+  exerciseLabel: string;
+}
+
+/**
+ * Schema dla pełnej odpowiedzi AI zawierającej wiele sesji
+ */
+export interface AiGeneratedSessionsSchema {
+  sessions: AiGeneratedReviewSessionSchema[];
+}
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 // Re-export commonly used database types for convenience
