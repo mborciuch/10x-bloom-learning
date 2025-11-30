@@ -59,6 +59,7 @@ export interface ResponseFormat {
 /**
  * Parametry dla generateCompletion
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface CompletionParams<TResponse = unknown> {
   messages: Message[];
   modelName?: string;

@@ -53,7 +53,7 @@ export function CalendarGrid({
       {/* Calendar cells */}
       <div className="grid grid-cols-7 gap-2">
         {calendarDays.map((day) => {
-          const isSelected = selectedDate && day.date.toDateString() === selectedDate.toDateString();
+          const isSelected = Boolean(selectedDate && day.date.toDateString() === selectedDate.toDateString());
 
           return (
             <CalendarDayCell

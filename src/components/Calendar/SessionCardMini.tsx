@@ -42,7 +42,7 @@ export function SessionCardMini({
   onSessionDelete,
 }: SessionCardMiniProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const isCompleted = session.isCompleted || session.status === "completed";
+  const isCompleted = session.isCompleted;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();

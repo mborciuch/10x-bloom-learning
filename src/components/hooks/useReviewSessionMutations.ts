@@ -51,10 +51,8 @@ export function useCompleteSession() {
           session.id === sessionId
             ? {
                 ...session,
-                status: "completed" as const,
                 isCompleted: true,
                 completedAt: new Date().toISOString(),
-                statusChangedAt: new Date().toISOString(),
               }
             : session
         );

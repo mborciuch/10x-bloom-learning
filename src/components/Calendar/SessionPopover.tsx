@@ -48,7 +48,7 @@ export function SessionPopover({ session, onQuickComplete, onEdit, onDelete, tri
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
-  const isCompleted = session.isCompleted || session.status === "completed";
+  const isCompleted = session.isCompleted;
 
   const handleViewDetails = () => {
     setIsPopoverOpen(false);
