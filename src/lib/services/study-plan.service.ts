@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@/db/supabase.client";
-import type { CreateStudyPlanCommand, Paginated, StudyPlanListItemDto } from "@/types";
+import type { CreateStudyPlanCommand, Paginated, StudyPlanListItemDto, UpdateStudyPlanCommand } from "@/types";
 import { mapToStudyPlanListItemDto } from "@/lib/mappers/study-plan.mapper";
 import { ApiError } from "@/lib/utils/error-handler";
 import { countWords } from "@/lib/utils/word-count";
@@ -119,5 +119,46 @@ export class StudyPlanService {
       pageSize,
       total: count ?? plans.length,
     };
+  }
+
+  async delete(userId: string, planId: string): Promise<void> {
+    const { error } = await this.supabase.from("study_plans").delete().eq("user_id", userId).eq("id", planId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async update(userId: string, planId: string, command: UpdateStudyPlanCommand): Promise<StudyPlanListItemDto> {
+    const { data, error } = await this.supabase
+      .from("study_plans")
+      .update({
+        title: command.title,
+        source_material: command.sourceMaterial,
+        status: command.status,
+      })
+      .eq("user_id", userId)
+      .eq("id", planId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Recompute pending flag based on ai_generation_log
+    const { data: pendingRows, error: pendingError } = await this.supabase
+      .from("ai_generation_log")
+      .select("study_plan_id")
+      .eq("study_plan_id", planId)
+      .eq("state", "pending");
+
+    if (pendingError) {
+      throw pendingError;
+    }
+
+    const hasPending = (pendingRows ?? []).some((row) => row.study_plan_id === planId);
+
+    return mapToStudyPlanListItemDto(data, hasPending);
   }
 }
