@@ -1,0 +1,16 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import { SessionDetailPageWrapper } from "@/components/review-session/SessionDetailPageWrapper";
+
+const { sessionId } = Astro.params;
+
+if (!sessionId) {
+  throw new Error("sessionId is required to view review session details.");
+}
+---
+
+<AppLayout title="Review Session">
+  <SessionDetailPageWrapper client:only="react" sessionId={sessionId} />
+</AppLayout>
+
+

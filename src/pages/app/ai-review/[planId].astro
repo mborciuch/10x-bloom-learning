@@ -1,0 +1,15 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import { AiReviewPageWrapper } from "@/components/ai-review/AiReviewPageWrapper";
+
+const { planId } = Astro.params;
+
+if (!planId) {
+  throw new Error("planId is required to access the AI review page.");
+}
+---
+
+<AppLayout title={`AI Review - Plan ${planId}`}>
+  <AiReviewPageWrapper client:only="react" planId={planId} />
+</AppLayout>
+

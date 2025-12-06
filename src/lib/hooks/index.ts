@@ -11,3 +11,5 @@ export type { StudyPlanDraft } from "./useAutoSaveDraft";
 export { useStudyPlans } from "./useStudyPlans";
 export { useDeletePlan, useUpdatePlanStatus } from "./useStudyPlanMutations";
 export { useAiGenerationMutation } from "./useAiGenerationMutation";
+export { useStudyPlanDetails } from "./useStudyPlanDetails";
+export { useAiReviewSessions } from "./useAiReviewSessions";

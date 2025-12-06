@@ -111,3 +111,27 @@ export async function updateStudyPlan(planId: string, command: UpdateStudyPlanCo
     throw new APIError("UNEXPECTED_ERROR", "Wystąpił nieoczekiwany błąd");
   }
 }
+
+export async function getStudyPlan(planId: string): Promise<StudyPlanDetailsDto> {
+  try {
+    const response = await fetch(`/api/study-plans/${encodeURIComponent(planId)}`);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new APIError(error?.error?.code ?? "UNKNOWN_ERROR", error?.error?.message ?? "Failed to load study plan");
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new APIError("NETWORK_ERROR", "Nie można połączyć się z serwerem. Sprawdź połączenie internetowe.");
+    }
+
+    console.error("Unexpected error during plan fetch:", error);
+    throw new APIError("UNEXPECTED_ERROR", "Wystąpił nieoczekiwany błąd");
+  }
+}

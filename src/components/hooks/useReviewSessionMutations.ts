@@ -1,6 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { ReviewSessionDto, CreateReviewSessionCommand } from "@/types";
+import type { ReviewSessionDto, CreateReviewSessionCommand, UpdateReviewSessionCommand } from "@/types";
+
+function invalidateSessionQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
+  queryClient.invalidateQueries({ queryKey: ["ai-review-sessions"] });
+}
 
 /**
  * Custom hook for completing a review session
@@ -82,7 +87,7 @@ export function useCompleteSession() {
 
     // Always refetch after error or success
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
+      invalidateSessionQueries(queryClient);
     },
   });
 }
@@ -160,7 +165,7 @@ export function useDeleteSession() {
 
     // Always refetch after error or success
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
+      invalidateSessionQueries(queryClient);
     },
   });
 }
@@ -202,7 +207,7 @@ export function useCreateSession() {
         description: "New review session has been added to your calendar.",
       });
       // Invalidate both sessions and plans (for counts)
-      queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
+      invalidateSessionQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     },
 
@@ -227,11 +232,17 @@ export function useCreateSession() {
  * const updateSession = useUpdateSession();
  * await updateSession.mutateAsync({ sessionId, command });
  */
-export function useUpdateSession() {
+interface UseUpdateSessionOptions {
+  enableSuccessToast?: boolean;
+  enableErrorToast?: boolean;
+}
+
+export function useUpdateSession(options: UseUpdateSessionOptions = {}) {
+  const { enableSuccessToast = true, enableErrorToast = true } = options;
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ sessionId, command }: { sessionId: string; command: Partial<CreateReviewSessionCommand> }) => {
+    mutationFn: async ({ sessionId, command }: { sessionId: string; command: Partial<UpdateReviewSessionCommand> }) => {
       const response = await fetch(`/api/review-sessions/${sessionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -248,17 +259,21 @@ export function useUpdateSession() {
 
     // Success notification
     onSuccess: () => {
-      toast.success("Session updated!", {
-        description: "Your changes have been saved.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
+      if (enableSuccessToast) {
+        toast.success("Session updated!", {
+          description: "Your changes have been saved.",
+        });
+      }
+      invalidateSessionQueries(queryClient);
     },
 
     // Error notification
     onError: (error) => {
-      toast.error("Failed to update session", {
-        description: error.message || "Please try again.",
-      });
+      if (enableErrorToast) {
+        toast.error("Failed to update session", {
+          description: error.message || "Please try again.",
+        });
+      }
     },
   });
 }

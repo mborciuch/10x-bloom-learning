@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@/db/supabase.client";
-import type { CreateStudyPlanCommand, Paginated, StudyPlanListItemDto, UpdateStudyPlanCommand } from "@/types";
+import type { CreateStudyPlanCommand, Paginated, StudyPlanDetailsDto, StudyPlanListItemDto, UpdateStudyPlanCommand } from "@/types";
 import { mapToStudyPlanListItemDto } from "@/lib/mappers/study-plan.mapper";
 import { ApiError } from "@/lib/utils/error-handler";
 import { countWords } from "@/lib/utils/word-count";
@@ -125,5 +125,50 @@ export class StudyPlanService {
     }
 
     return mapToStudyPlanListItemDto(data);
+  }
+
+  async getDetails(userId: string, planId: string): Promise<StudyPlanDetailsDto> {
+    const { data, error } = await this.supabase.from("study_plans").select("*").eq("user_id", userId).eq("id", planId).single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        throw new ApiError("NOT_FOUND", "Study plan not found", 404);
+      }
+      throw error;
+    }
+
+    if (!data) {
+      throw new ApiError("NOT_FOUND", "Study plan not found", 404);
+    }
+
+    const [{ count: totalSessions, error: totalError }, { count: completedSessions, error: completedError }] = await Promise.all([
+      this.supabase
+        .from("review_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("study_plan_id", planId),
+      this.supabase
+        .from("review_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("study_plan_id", planId)
+        .eq("is_completed", true),
+    ]);
+
+    if (totalError) {
+      throw totalError;
+    }
+
+    if (completedError) {
+      throw completedError;
+    }
+
+    const base = mapToStudyPlanListItemDto(data);
+
+    return {
+      ...base,
+      totalSessions: totalSessions ?? 0,
+      completedSessions: completedSessions ?? 0,
+    };
   }
 }
