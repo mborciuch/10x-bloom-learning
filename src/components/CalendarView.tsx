@@ -82,8 +82,9 @@ export function CalendarView() {
   };
 
   const handleToday = () => {
-    setCurrentMonth(new Date());
-    setSelectedDate(new Date());
+    const today = new Date();
+    setCurrentMonth(today);
+    setSelectedDate(today);
   };
 
   // Session interaction handlers
@@ -93,7 +94,7 @@ export function CalendarView() {
 
   const handleQuickComplete = async (sessionId: string) => {
     try {
-      await completeSessionMutation.mutateAsync(sessionId);
+      await completeSessionMutation.mutateAsync({ sessionId });
     } catch (error) {
       // Error is handled by the mutation hook with toast
       console.error("Failed to complete session:", error);
@@ -105,8 +106,14 @@ export function CalendarView() {
     console.log("Edit session:", sessionId);
   };
 
-  const handleAddSession = () => {
+  const handleOpenAddModalForDate = (date: Date) => {
+    setSelectedDate(date);
     setIsAddSessionModalOpen(true);
+  };
+
+  const handleAddSession = () => {
+    const today = new Date();
+    handleOpenAddModalForDate(today);
   };
 
   const handleSessionDelete = async (sessionId: string) => {
@@ -194,7 +201,7 @@ export function CalendarView() {
             onSessionEdit={handleSessionEdit}
             onSessionDelete={handleSessionDelete}
             selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
+            onDateSelect={handleOpenAddModalForDate}
           />
 
           {/* Calendar Day List (Mobile) */}

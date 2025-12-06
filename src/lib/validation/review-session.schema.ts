@@ -7,6 +7,48 @@ const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
   message: "Invalid date format, expected YYYY-MM-DD",
 });
 
+const isoDateTimeSchema = z.string().datetime({
+  message: "Invalid datetime format, expected ISO 8601 string",
+});
+
+const nonEmptyTrimmedString = z
+  .string()
+  .trim()
+  .min(1, "Value cannot be empty")
+  .max(2000, "Value cannot exceed 2000 characters");
+
+export const ReviewSessionContentSchema = z
+  .object({
+    questions: z
+      .array(nonEmptyTrimmedString.max(500, "Question cannot exceed 500 characters"))
+      .min(1, "At least one question is required"),
+    answers: z
+      .array(nonEmptyTrimmedString.max(500, "Answer cannot exceed 500 characters"))
+      .min(1, "At least one answer is required"),
+    hints: z
+      .array(nonEmptyTrimmedString.max(500, "Hint cannot exceed 500 characters"))
+      .optional(),
+  })
+  .refine(
+    (data) => data.questions.length === data.answers.length,
+    {
+      path: ["answers"],
+      message: "questions and answers arrays must contain the same number of items",
+    }
+  )
+  .refine(
+    (data) => {
+      if (!data.hints || data.hints.length === 0) {
+        return true;
+      }
+      return data.hints.length === data.questions.length;
+    },
+    {
+      path: ["hints"],
+      message: "hints length must match questions length when provided",
+    }
+  );
+
 /**
  * Query schema for GET /api/review-sessions
  *
@@ -69,6 +111,18 @@ export const ReviewSessionListQuerySchema = z
       path: ["dateFrom"],
     }
   )
+  .refine(
+    (data) => {
+      if (data.planId && data.studyPlanId) {
+        return data.planId === data.studyPlanId;
+      }
+      return true;
+    },
+    {
+      message: "planId and studyPlanId must match when both are provided",
+      path: ["studyPlanId"],
+    }
+  )
   .transform((data) => {
     const { planId, studyPlanId, ...rest } = data;
 
@@ -79,3 +133,85 @@ export const ReviewSessionListQuerySchema = z
   });
 
 export type ReviewSessionListQuerySchemaInput = z.infer<typeof ReviewSessionListQuerySchema>;
+
+export const CreateReviewSessionSchema = z
+  .object({
+    studyPlanId: z.string().uuid({ message: "studyPlanId must be a valid UUID" }),
+    exerciseTemplateId: z.string().uuid({ message: "exerciseTemplateId must be a valid UUID" }).optional(),
+    exerciseLabel: z
+      .string({ required_error: "exerciseLabel is required" })
+      .trim()
+      .min(1, "exerciseLabel cannot be empty")
+      .max(200, "exerciseLabel cannot exceed 200 characters"),
+    reviewDate: dateStringSchema,
+    taxonomyLevel: z.enum(taxonomyLevelValues),
+    content: ReviewSessionContentSchema,
+    notes: z
+      .string()
+      .trim()
+      .max(2000, "notes cannot exceed 2000 characters")
+      .optional(),
+  })
+  .strict();
+
+export type CreateReviewSessionSchemaInput = z.infer<typeof CreateReviewSessionSchema>;
+
+export const UpdateReviewSessionSchema = z
+  .object({
+    reviewDate: dateStringSchema.optional(),
+    exerciseTemplateId: z.string().uuid({ message: "exerciseTemplateId must be a valid UUID" }).optional(),
+    exerciseLabel: z
+      .string()
+      .trim()
+      .min(1, "exerciseLabel cannot be empty")
+      .max(200, "exerciseLabel cannot exceed 200 characters")
+      .optional(),
+    taxonomyLevel: z.enum(taxonomyLevelValues).optional(),
+    status: z.enum(reviewStatusValues).optional(),
+    content: ReviewSessionContentSchema.optional(),
+    notes: z
+      .string()
+      .trim()
+      .max(2000, "notes cannot exceed 2000 characters")
+      .optional(),
+  })
+  .strict()
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    {
+      message: "At least one field must be provided for update",
+      path: [],
+    }
+  );
+
+export type UpdateReviewSessionSchemaInput = z.infer<typeof UpdateReviewSessionSchema>;
+
+export const CompleteReviewSessionSchema = z
+  .object({
+    completedAt: isoDateTimeSchema.optional(),
+  })
+  .strict();
+
+export type CompleteReviewSessionSchemaInput = z.infer<typeof CompleteReviewSessionSchema>;
+
+export const SubmitReviewSessionFeedbackSchema = z
+  .object({
+    rating: z
+      .number({
+        required_error: "rating is required",
+        invalid_type_error: "rating must be a number",
+      })
+      .int("rating must be an integer")
+      .min(1, "rating must be between 1 and 5")
+      .max(5, "rating must be between 1 and 5"),
+    comment: z
+      .string({
+        invalid_type_error: "comment must be a string",
+      })
+      .trim()
+      .max(2000, "comment cannot exceed 2000 characters")
+      .optional(),
+  })
+  .strict();
+
+export type SubmitReviewSessionFeedbackSchemaInput = z.infer<typeof SubmitReviewSessionFeedbackSchema>;

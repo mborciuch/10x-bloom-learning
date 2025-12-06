@@ -1,6 +1,7 @@
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { addYears, format, isSameDay, subYears } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -10,15 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useExerciseTemplates } from "@/components/hooks/useExerciseTemplates";
 import { addSessionSchema, type AddSessionFormData } from "./addSessionSchema";
-import type { StudyPlanListItemDto } from "@/types";
+import { useExerciseTemplates } from "@/components/hooks/useExerciseTemplates";
+import type { ExerciseTemplateDto, StudyPlanListItemDto } from "@/types";
 
 interface AddSessionFormProps {
   studyPlans: StudyPlanListItemDto[];
   onSubmit: (data: AddSessionFormData) => Promise<void>;
   onCancel: () => void;
   defaultDate?: Date;
+  exerciseTemplates?: ExerciseTemplateDto[];
+  isLoadingTemplates?: boolean;
+  templatesError?: string;
 }
 
 /**
@@ -41,34 +45,106 @@ interface AddSessionFormProps {
  *   defaultDate={selectedDate}
  * />
  */
-export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: AddSessionFormProps) {
-  const { data: templatesPage, isLoading: isLoadingTemplates } = useExerciseTemplates();
-  const templates = templatesPage?.items ?? [];
+export function AddSessionForm({
+  studyPlans,
+  onSubmit,
+  onCancel,
+  defaultDate,
+  exerciseTemplates,
+  isLoadingTemplates,
+  templatesError,
+}: AddSessionFormProps) {
+  const shouldFetchTemplates = !exerciseTemplates;
+  const {
+    data: templatesPage,
+    isLoading: isTemplatesQueryLoading,
+    isError: isTemplatesQueryError,
+    error: templatesQueryError,
+  } = useExerciseTemplates({
+    enabled: shouldFetchTemplates,
+  });
+
+  const templates = exerciseTemplates ?? templatesPage?.items ?? [];
+  const templatesLoading = isLoadingTemplates ?? (shouldFetchTemplates && isTemplatesQueryLoading);
+  const templatesLoadError =
+    templatesError ??
+    (isTemplatesQueryError
+      ? templatesQueryError instanceof Error
+        ? templatesQueryError.message
+        : "Failed to load exercise templates"
+      : undefined);
+
+  const hasStudyPlans = studyPlans.length > 0;
+
+  const computeResetValues = (): AddSessionFormData => ({
+    studyPlanId: hasStudyPlans ? studyPlans[0].id : "",
+    reviewDate: defaultDate ?? new Date(),
+    exerciseType: "custom",
+    exerciseTemplateId: undefined,
+    customExerciseLabel: "",
+    taxonomyLevel: "remember",
+    questionsText: "",
+    answersText: "",
+    notes: "",
+  });
 
   const form = useForm<AddSessionFormData>({
     resolver: zodResolver(addSessionSchema),
-    defaultValues: {
-      studyPlanId: studyPlans[0]?.id || "",
-      reviewDate: defaultDate || new Date(),
-      exerciseType: "custom",
-      taxonomyLevel: "remember",
-      questionsText: "",
-      answersText: "",
-      notes: "",
-    },
+    defaultValues: computeResetValues(),
   });
 
   const exerciseType = form.watch("exerciseType");
   const isSubmitting = form.formState.isSubmitting;
+  const disableSubmit = !hasStudyPlans || isSubmitting;
+
+  const { min: minDate, max: maxDate } = useMemo(() => {
+    const now = new Date();
+    const minBoundary = subYears(new Date(now), 1);
+    const maxBoundary = addYears(new Date(now), 5);
+    minBoundary.setHours(0, 0, 0, 0);
+    maxBoundary.setHours(23, 59, 59, 999);
+    return { min: minBoundary, max: maxBoundary };
+  }, []);
+
+  useEffect(() => {
+    if (!hasStudyPlans) {
+      form.setValue("studyPlanId", "");
+      return;
+    }
+
+    const currentPlanId = form.getValues("studyPlanId");
+    const planStillExists = studyPlans.some((plan) => plan.id === currentPlanId);
+
+    if (!currentPlanId || !planStillExists) {
+      form.setValue("studyPlanId", studyPlans[0].id);
+    }
+  }, [form, hasStudyPlans, studyPlans]);
+
+  useEffect(() => {
+    if (!defaultDate) {
+      return;
+    }
+
+    const currentDate = form.getValues("reviewDate");
+
+    if (!currentDate || !isSameDay(currentDate, defaultDate)) {
+      form.setValue("reviewDate", defaultDate);
+    }
+  }, [defaultDate, form]);
 
   const handleSubmit = async (data: AddSessionFormData) => {
     try {
       await onSubmit(data);
-      form.reset();
+      form.reset(computeResetValues());
     } catch (error) {
       // Error handling is done in parent component (with toast)
       console.error("Form submission error:", error);
     }
+  };
+
+  const handleCancel = () => {
+    form.reset(computeResetValues());
+    onCancel();
   };
 
   return (
@@ -81,7 +157,7 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Study Plan</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ""} disabled={!hasStudyPlans}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a study plan" />
@@ -95,6 +171,11 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
                   ))}
                 </SelectContent>
               </Select>
+              {!hasStudyPlans && (
+                <FormDescription className="text-destructive">
+                  You need an active study plan before adding review sessions.
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -120,12 +201,13 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date < new Date("1900-01-01")}
+                    onSelect={(date) => date && field.onChange(date)}
+                    disabled={(date) => date < minDate || date > maxDate}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              <FormDescription>Date must be within 1 year in the past and 5 years in the future.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -141,7 +223,7 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className="flex flex-col space-y-1"
                 >
                   <FormItem className="flex items-center space-x-3 space-y-0">
@@ -171,7 +253,11 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Exercise Template</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTemplates}>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value ?? ""}
+                  disabled={templatesLoading || templates.length === 0}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a template" />
@@ -183,9 +269,19 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
                         {template.name}
                       </SelectItem>
                     ))}
+                    {templates.length === 0 && (
+                      <SelectItem value="__no-templates" disabled>
+                        No templates available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
-                <FormDescription>Choose from predefined exercise templates</FormDescription>
+                <FormDescription>
+                  Choose from predefined exercise templates.
+                  {templatesLoadError && (
+                    <span className="block text-destructive">{templatesLoadError}</span>
+                  )}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -214,7 +310,7 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bloom&apos;s Taxonomy Level</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select taxonomy level" />
@@ -244,7 +340,10 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
               <FormLabel>Questions</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter questions (one per line)&#10;Question 1&#10;Question 2&#10;..."
+                  placeholder={`Enter questions (one per line)
+Question 1
+Question 2
+...`}
                   className="min-h-[120px] resize-y"
                   {...field}
                 />
@@ -264,7 +363,10 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
               <FormLabel>Answers</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter answers (one per line)&#10;Answer 1&#10;Answer 2&#10;..."
+                  placeholder={`Enter answers (one per line)
+Answer 1
+Answer 2
+...`}
                   className="min-h-[120px] resize-y"
                   {...field}
                 />
@@ -293,10 +395,10 @@ export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: 
 
         {/* Form Actions */}
         <div className="flex gap-3 justify-end pt-4">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={disableSubmit}>
             {isSubmitting ? "Creating..." : "Create Session"}
           </Button>
         </div>

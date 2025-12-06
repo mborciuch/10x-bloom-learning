@@ -29,21 +29,38 @@ interface AddSessionModalProps {
  */
 export function AddSessionModal({ open, onOpenChange, studyPlans, defaultDate }: AddSessionModalProps) {
   const createSessionMutation = useCreateSession();
-  const { data: templatesPage } = useExerciseTemplates();
+  const {
+    data: templatesPage,
+    isLoading: isTemplatesLoading,
+    isError: isTemplatesError,
+    error: templatesError,
+  } = useExerciseTemplates({
+    enabled: open,
+  });
   const templates = templatesPage?.items ?? [];
+  const templatesErrorMessage =
+    isTemplatesError && templatesError
+      ? templatesError instanceof Error
+        ? templatesError.message
+        : "Failed to load exercise templates"
+      : undefined;
 
   const handleSubmit = async (formData: AddSessionFormData) => {
     try {
       // Transform form data to CreateReviewSessionCommand
-      let exerciseLabel = "Custom Exercise";
+      const sanitizeMultilineInput = (value: string) =>
+        value
+          .split("\n")
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0);
 
-      if (formData.exerciseType === "custom") {
-        exerciseLabel = formData.customExerciseLabel || "Custom Exercise";
-      } else if (formData.exerciseType === "template" && formData.exerciseTemplateId) {
-        // Find template name from templates list
-        const template = templates.find((t) => t.id === formData.exerciseTemplateId);
-        exerciseLabel = template?.name || "Template Exercise";
-      }
+      const questions = sanitizeMultilineInput(formData.questionsText);
+      const answers = sanitizeMultilineInput(formData.answersText);
+
+      const exerciseLabel =
+        formData.exerciseType === "custom"
+          ? formData.customExerciseLabel?.trim() || "Custom Exercise"
+          : templates.find((template) => template.id === formData.exerciseTemplateId)?.name || "Template Exercise";
 
       const command: CreateReviewSessionCommand = {
         studyPlanId: formData.studyPlanId,
@@ -52,10 +69,10 @@ export function AddSessionModal({ open, onOpenChange, studyPlans, defaultDate }:
         reviewDate: format(formData.reviewDate, "yyyy-MM-dd"),
         taxonomyLevel: formData.taxonomyLevel,
         content: {
-          questions: formData.questionsText.split("\n").filter((q) => q.trim()),
-          answers: formData.answersText.split("\n").filter((a) => a.trim()),
+          questions,
+          answers,
         },
-        notes: formData.notes || undefined,
+        notes: formData.notes?.trim() || undefined,
       };
 
       await createSessionMutation.mutateAsync(command);
@@ -84,6 +101,9 @@ export function AddSessionModal({ open, onOpenChange, studyPlans, defaultDate }:
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           defaultDate={defaultDate}
+          exerciseTemplates={templates}
+          isLoadingTemplates={isTemplatesLoading}
+          templatesError={templatesErrorMessage}
         />
       </DialogContent>
     </Dialog>

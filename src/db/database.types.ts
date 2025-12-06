@@ -201,6 +201,7 @@ export interface Database {
           completed_at: string | null;
           status_changed_at: string;
           content: Json;
+          metadata: Json;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -219,6 +220,7 @@ export interface Database {
           completed_at?: string | null;
           status_changed_at?: string;
           content: Json;
+          metadata?: Json;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -237,6 +239,7 @@ export interface Database {
           completed_at?: string | null;
           status_changed_at?: string;
           content?: Json;
+          metadata?: Json;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;

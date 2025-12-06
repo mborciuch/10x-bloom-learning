@@ -59,13 +59,19 @@ export function useCalendarSessions(
       const response = await fetch(`/api/review-sessions?${params.toString()}`);
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("UNAUTHORIZED");
+        let errorMessage = "Failed to fetch review sessions";
+
+        const errorBody = await response.json().catch(() => null);
+        if (errorBody?.error?.message) {
+          errorMessage = errorBody.error.message;
+        } else if (response.status === 401) {
+          errorMessage = "UNAUTHORIZED";
         }
-        throw new Error("Failed to fetch review sessions");
+
+        throw new Error(errorMessage);
       }
 
-      return response.json() as Promise<Paginated<ReviewSessionDto>>;
+      return (await response.json()) as Paginated<ReviewSessionDto>;
     },
     staleTime: 1 * 60 * 1000, // 1 minute
     refetchOnWindowFocus: true,

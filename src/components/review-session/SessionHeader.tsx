@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 interface SessionHeaderProps {
   session: ReviewSessionDto;
   studyPlanTitle?: string;
+  onComplete?: () => void | Promise<void>;
+  isCompleting?: boolean;
 }
 
 function formatTaxonomy(level: string) {
@@ -18,7 +20,7 @@ function formatTaxonomy(level: string) {
 /**
  * Displays navigation, breadcrumbs, and key metadata for the session.
  */
-export function SessionHeader({ session, studyPlanTitle }: SessionHeaderProps) {
+export function SessionHeader({ session, studyPlanTitle, onComplete, isCompleting = false }: SessionHeaderProps) {
   const reviewDate = session.reviewDate ? format(new Date(session.reviewDate), "EEEE, MMM d") : "No scheduled date";
   const completedAt = session.completedAt ? format(new Date(session.completedAt), "MMM d, yyyy") : null;
 
@@ -32,6 +34,20 @@ export function SessionHeader({ session, studyPlanTitle }: SessionHeaderProps) {
               Back to calendar
             </a>
           </Button>
+
+          {!session.isCompleted && onComplete ? (
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                void onComplete();
+              }}
+              disabled={isCompleting}
+            >
+              <CircleCheck className="size-4" />
+              {isCompleting ? "Completing..." : "Mark as completed"}
+            </Button>
+          ) : null}
 
           <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
             <ol className="flex flex-wrap items-center gap-2">

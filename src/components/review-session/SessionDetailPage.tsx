@@ -1,5 +1,6 @@
 import { useReviewSession } from "@/components/hooks/useReviewSession";
 import { useStudyPlanDetails } from "@/lib/hooks/useStudyPlanDetails";
+import { useCompleteSession } from "@/components/hooks/useReviewSessionMutations";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorState } from "@/components/ErrorState";
 import { SessionHeader } from "./SessionHeader";
@@ -31,6 +32,7 @@ export function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
 
   const studyPlanId = session?.studyPlanId;
   const { data: studyPlan } = useStudyPlanDetails(studyPlanId);
+  const completeSessionMutation = useCompleteSession();
 
   if (isLoading) {
     return <LoadingSpinner label="Loading review session..." />;
@@ -47,10 +49,23 @@ export function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
     );
   }
 
+  const handleMarkComplete = async () => {
+    try {
+      await completeSessionMutation.mutateAsync({ sessionId: session.id });
+    } catch (mutationError) {
+      console.error("Failed to complete session:", mutationError);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 md:py-10">
       <div className="space-y-6">
-        <SessionHeader session={session} studyPlanTitle={studyPlan?.title} />
+        <SessionHeader
+          session={session}
+          studyPlanTitle={studyPlan?.title}
+          onComplete={handleMarkComplete}
+          isCompleting={completeSessionMutation.isPending}
+        />
         <QuestionList session={session} />
       </div>
     </div>

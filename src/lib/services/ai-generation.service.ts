@@ -109,6 +109,9 @@ export class AiGenerationService {
           answers: session.answers,
           hints: session.hints,
         } as never,
+        metadata: {
+          edited: false,
+        } as never,
         notes: null,
       }));
 

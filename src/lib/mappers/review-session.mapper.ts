@@ -5,7 +5,9 @@ import { ApiError } from "@/lib/utils/error-handler";
 type ReviewSessionRow = Tables<"review_sessions">;
 
 function parseReviewSessionContent(raw: unknown, sessionId: string): ReviewSessionContentDto {
-  if (!raw || typeof raw !== "object") {
+  const parsed = typeof raw === "string" ? safeJsonParse(raw, sessionId) : raw;
+
+  if (!parsed || typeof parsed !== "object") {
     throw new ApiError(
       "DATA_INTEGRITY_ERROR",
       `Invalid content for review session ${sessionId}: expected JSON object`,
@@ -13,7 +15,7 @@ function parseReviewSessionContent(raw: unknown, sessionId: string): ReviewSessi
     );
   }
 
-  const content = raw as {
+  const content = parsed as {
     questions?: unknown;
     answers?: unknown;
     hints?: unknown;
@@ -41,6 +43,14 @@ function parseReviewSessionContent(raw: unknown, sessionId: string): ReviewSessi
   let hints: string[] | undefined;
   if (Array.isArray(content.hints)) {
     hints = content.hints.map((h) => String(h));
+
+    if (hints.length && hints.length !== questions.length) {
+      throw new ApiError(
+        "DATA_INTEGRITY_ERROR",
+        `Invalid content for review session ${sessionId}: hints length mismatch`,
+        500
+      );
+    }
   }
 
   return {
@@ -48,6 +58,19 @@ function parseReviewSessionContent(raw: unknown, sessionId: string): ReviewSessi
     answers,
     hints,
   };
+}
+
+function safeJsonParse(content: string, sessionId: string) {
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    throw new ApiError(
+      "DATA_INTEGRITY_ERROR",
+      `Invalid JSON content for review session ${sessionId}`,
+      500,
+      error
+    );
+  }
 }
 
 export function mapToReviewSessionDto(row: ReviewSessionRow): ReviewSessionDto {

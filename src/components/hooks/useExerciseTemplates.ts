@@ -7,6 +7,7 @@ interface UseExerciseTemplatesOptions {
   search?: string;
   page?: number;
   pageSize?: number;
+  enabled?: boolean;
 }
 
 interface NormalizedUseExerciseTemplatesOptions {
@@ -26,12 +27,14 @@ interface NormalizedUseExerciseTemplatesOptions {
  * const { data: templates, isLoading } = useExerciseTemplates();
  */
 export function useExerciseTemplates(options: UseExerciseTemplatesOptions = {}) {
+  const { enabled = true, ...requestOptions } = options;
+
   const normalizedOptions: NormalizedUseExerciseTemplatesOptions = {
-    isActive: options.isActive ?? true,
-    page: options.page ?? 1,
-    pageSize: options.pageSize ?? 50,
-    taxonomyLevel: options.taxonomyLevel,
-    search: options.search?.trim() || undefined,
+    isActive: requestOptions.isActive ?? true,
+    page: requestOptions.page ?? 1,
+    pageSize: requestOptions.pageSize ?? 50,
+    taxonomyLevel: requestOptions.taxonomyLevel,
+    search: requestOptions.search?.trim() || undefined,
   };
 
   return useQuery<Paginated<ExerciseTemplateDto>>({
@@ -60,5 +63,6 @@ export function useExerciseTemplates(options: UseExerciseTemplatesOptions = {}) 
     },
     staleTime: 15 * 60 * 1000, // 15 minutes (templates don't change often)
     retry: 3,
+    enabled,
   });
 }

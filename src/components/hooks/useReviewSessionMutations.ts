@@ -1,10 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { ReviewSessionDto, CreateReviewSessionCommand, UpdateReviewSessionCommand } from "@/types";
+import type {
+  ReviewSessionDto,
+  CreateReviewSessionCommand,
+  UpdateReviewSessionCommand,
+  CompleteReviewSessionCommand,
+} from "@/types";
 
-function invalidateSessionQueries(queryClient: ReturnType<typeof useQueryClient>) {
+function invalidateSessionQueries(queryClient: ReturnType<typeof useQueryClient>, sessionId?: string) {
   queryClient.invalidateQueries({ queryKey: ["review-sessions"] });
   queryClient.invalidateQueries({ queryKey: ["ai-review-sessions"] });
+  if (sessionId) {
+    queryClient.invalidateQueries({ queryKey: ["review-session", sessionId] });
+  }
 }
 
 /**
@@ -20,15 +28,24 @@ function invalidateSessionQueries(queryClient: ReturnType<typeof useQueryClient>
  * const completeSession = useCompleteSession();
  * await completeSession.mutateAsync(sessionId);
  */
+interface CompleteSessionVariables extends CompleteReviewSessionCommand {
+  sessionId: string;
+}
+
 export function useCompleteSession() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: async ({ sessionId, completedAt }: CompleteSessionVariables) => {
+      const command: CompleteReviewSessionCommand = {};
+      if (completedAt) {
+        command.completedAt = completedAt;
+      }
+
       const response = await fetch(`/api/review-sessions/${sessionId}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(command),
       });
 
       if (!response.ok) {
@@ -40,7 +57,9 @@ export function useCompleteSession() {
     },
 
     // Optimistic update
-    onMutate: async (sessionId) => {
+    onMutate: async ({ sessionId, completedAt }) => {
+      const optimisticCompletedAt = completedAt ?? new Date().toISOString();
+
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["review-sessions"] });
 
@@ -48,6 +67,7 @@ export function useCompleteSession() {
       const previousSessions = queryClient.getQueriesData<ReviewSessionDto[]>({
         queryKey: ["review-sessions"],
       });
+      const previousSessionDetail = queryClient.getQueryData<ReviewSessionDto>(["review-session", sessionId]);
 
       // Optimistically update all matching queries
       queryClient.setQueriesData<ReviewSessionDto[]>({ queryKey: ["review-sessions"] }, (old) => {
@@ -57,21 +77,33 @@ export function useCompleteSession() {
             ? {
                 ...session,
                 isCompleted: true,
-                completedAt: new Date().toISOString(),
+                completedAt: optimisticCompletedAt,
               }
             : session
         );
       });
 
-      return { previousSessions };
+      queryClient.setQueryData<ReviewSessionDto>(["review-session", sessionId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isCompleted: true,
+          completedAt: optimisticCompletedAt,
+        };
+      });
+
+      return { previousSessions, previousSessionDetail };
     },
 
     // Rollback on error
-    onError: (error, sessionId, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previousSessions) {
         context.previousSessions.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
+      }
+      if (context?.previousSessionDetail) {
+        queryClient.setQueryData(["review-session", context.previousSessionDetail.id], context.previousSessionDetail);
       }
       toast.error("Failed to complete session", {
         description: error.message || "Please try again.",
@@ -86,8 +118,8 @@ export function useCompleteSession() {
     },
 
     // Always refetch after error or success
-    onSettled: () => {
-      invalidateSessionQueries(queryClient);
+    onSettled: (_result, _error, variables) => {
+      invalidateSessionQueries(queryClient, variables.sessionId);
     },
   });
 }
