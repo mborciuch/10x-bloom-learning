@@ -8,6 +8,3 @@ import type { PlansEmptyStateProps } from "./plans.types";
 export function PlansEmptyState({ onCreateFirstPlan }: PlansEmptyStateProps) {
   return <EmptyStateOnboarding onCreateClick={onCreateFirstPlan} />;
 }
-
-
-

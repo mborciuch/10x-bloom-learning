@@ -3,11 +3,9 @@ import { z } from "zod";
 const reviewStatusValues = ["proposed", "accepted", "rejected"] as const;
 const taxonomyLevelValues = ["remember", "understand", "apply", "analyze", "evaluate", "create"] as const;
 
-const dateStringSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: "Invalid date format, expected YYYY-MM-DD",
-  });
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+  message: "Invalid date format, expected YYYY-MM-DD",
+});
 
 /**
  * Query schema for GET /api/review-sessions
@@ -30,17 +28,11 @@ export const ReviewSessionListQuerySchema = z
 
     status: z.enum(reviewStatusValues).optional().describe("Filter by review session status"),
 
-    isCompleted: z.coerce
-      .boolean()
-      .optional()
-      .describe("Filter by completion flag"),
+    isCompleted: z.coerce.boolean().optional().describe("Filter by completion flag"),
 
     taxonomyLevel: z.enum(taxonomyLevelValues).optional().describe("Filter by Bloom taxonomy level"),
 
-    isAiGenerated: z.coerce
-      .boolean()
-      .optional()
-      .describe("Filter AI-generated vs manual sessions"),
+    isAiGenerated: z.coerce.boolean().optional().describe("Filter AI-generated vs manual sessions"),
 
     page: z.coerce
       .number({ invalid_type_error: "Page must be a number" })
@@ -87,5 +79,3 @@ export const ReviewSessionListQuerySchema = z
   });
 
 export type ReviewSessionListQuerySchemaInput = z.infer<typeof ReviewSessionListQuerySchema>;
-
-

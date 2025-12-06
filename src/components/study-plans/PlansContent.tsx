@@ -40,13 +40,7 @@ export function PlansContent({
   }
 
   if (error) {
-    return (
-      <ErrorState
-        title="Failed to load study plans"
-        message={getErrorMessage(error)}
-        onRetry={onReload}
-      />
-    );
+    return <ErrorState title="Failed to load study plans" message={getErrorMessage(error)} onRetry={onReload} />;
   }
 
   if (!hasItems) {
@@ -106,5 +100,3 @@ export function PlansContent({
     />
   );
 }
-
-

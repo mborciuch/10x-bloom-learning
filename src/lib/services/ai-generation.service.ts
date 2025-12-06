@@ -1,13 +1,7 @@
 // src/lib/services/ai-generation.service.ts
 
 import type { SupabaseClient } from "@/db/supabase.client";
-import type {
-  InitiateAiGenerationCommand,
-  AiGeneratedSessionsSchema,
-  TaxonomyLevel,
-  AiGenerationDto,
-  AiGenerationParametersDto,
-} from "@/types";
+import type { InitiateAiGenerationCommand, AiGeneratedSessionsSchema, TaxonomyLevel, ReviewSessionDto } from "@/types";
 import { OpenRouterService } from "./openrouter.service";
 import { ApiError } from "@/lib/utils/error-handler";
 import { OpenRouterError } from "@/lib/utils/openrouter-errors";
@@ -28,10 +22,14 @@ export class AiGenerationService {
   }
 
   /**
-   * Inicjuje asynchroniczne generowanie sesji AI
-   * Tworzy wpis w ai_generation_log i zwraca ID do trackingu
+   * Synchroniczne generowanie sesji AI dla danego planu nauki.
+   * Zwraca listę świeżo utworzonych sesji jako ReviewSessionDto[].
    */
-  async initiate(userId: string, studyPlanId: string, command: InitiateAiGenerationCommand): Promise<AiGenerationDto> {
+  async generateReviewSessions(
+    userId: string,
+    studyPlanId: string,
+    command: InitiateAiGenerationCommand
+  ): Promise<ReviewSessionDto[]> {
     // 1. Sprawdź ownership planu
     const { data: studyPlan, error: planError } = await this.supabase
       .from("study_plans")
@@ -44,19 +42,7 @@ export class AiGenerationService {
       throw new ApiError("NOT_FOUND", "Study plan not found", 404);
     }
 
-    // 2. Sprawdź czy nie istnieje pending generation
-    const { data: pendingGeneration } = await this.supabase
-      .from("ai_generation_log")
-      .select("id")
-      .eq("study_plan_id", studyPlanId)
-      .eq("state", "pending")
-      .maybeSingle();
-
-    if (pendingGeneration) {
-      throw new ApiError("CONFLICT", "A pending AI generation already exists for this study plan", 409);
-    }
-
-    // 3. Waliduj templates jeśli podane
+    // 2. Waliduj templates jeśli podane
     if (command.includePredefinedTemplateIds && command.includePredefinedTemplateIds.length > 0) {
       const { data: templates, error: templatesError } = await this.supabase
         .from("exercise_templates")
@@ -73,89 +59,25 @@ export class AiGenerationService {
       }
     }
 
-    // 4. Przygotuj parameters dla log
-    const parameters: AiGenerationParametersDto = {
-      requestedCount: command.requestedCount,
-      taxonomyLevels: command.taxonomyLevels,
-      templateIds: command.includePredefinedTemplateIds,
-    };
+    // 3. Zbuduj prompty
+    const systemPrompt = this.buildSystemPrompt();
+    const userPrompt = this.buildUserPrompt(
+      studyPlan.source_material,
+      command.requestedCount,
+      command.taxonomyLevels as TaxonomyLevel[]
+    );
 
-    // 5. Utwórz wpis w ai_generation_log
-    const { data: logEntry, error: logError } = await this.supabase
-      .from("ai_generation_log")
-      .insert({
-        study_plan_id: studyPlanId,
-        user_id: userId,
-        state: "pending",
-        model_name: command.modelName || "anthropic/claude-3.5-sonnet",
-        parameters: parameters as never,
-        requested_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    // 4. Zdefiniuj schemat JSON dla odpowiedzi
+    const responseSchema = this.buildResponseSchema();
 
-    if (logError) {
-      throw logError;
-    }
-
-    // 6. Zwróć DTO dla 202 response
-    return {
-      id: logEntry.id,
-      studyPlanId: logEntry.study_plan_id,
-      state: logEntry.state,
-      requestedAt: logEntry.requested_at,
-      modelName: logEntry.model_name,
-      parameters: parameters,
-      response: logEntry.response,
-      errorMessage: logEntry.error_message,
-    };
-  }
-
-  /**
-   * Background worker: Wykonuje faktyczne generowanie przez OpenRouter
-   * Wywołanie asynchroniczne - nie blokuje API endpoint
-   */
-  async processGeneration(generationId: string): Promise<void> {
     try {
-      // 1. Pobierz generation log
-      const { data: generation, error: genError } = await this.supabase
-        .from("ai_generation_log")
-        .select("*, study_plans(source_material, title)")
-        .eq("id", generationId)
-        .single();
-
-      if (genError || !generation) {
-        throw new Error("Generation log not found");
-      }
-
-      // 2. Pobierz study plan
-      const studyPlan = Array.isArray(generation.study_plans) ? generation.study_plans[0] : generation.study_plans;
-
-      if (!studyPlan || !studyPlan.source_material) {
-        throw new Error("Study plan source material not found");
-      }
-
-      // 3. Parsuj parameters
-      const parameters = generation.parameters as unknown as AiGenerationParametersDto;
-
-      // 4. Zbuduj prompty
-      const systemPrompt = this.buildSystemPrompt();
-      const userPrompt = this.buildUserPrompt(
-        studyPlan.source_material,
-        parameters.requestedCount,
-        parameters.taxonomyLevels
-      );
-
-      // 5. Zdefiniuj schemat JSON dla odpowiedzi
-      const responseSchema = this.buildResponseSchema();
-
-      // 6. Wywołaj OpenRouter
+      // 5. Wywołaj OpenRouter
       const result = await this.openRouterService.generateCompletion<AiGeneratedSessionsSchema>({
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        modelName: generation.model_name || undefined,
+        modelName: command.modelName,
         modelParams: {
           temperature: 0.7,
           maxTokens: 4000,
@@ -170,12 +92,13 @@ export class AiGenerationService {
         },
       });
 
-      // 7. Zapisz sesje do review_sessions
+      // 6. Zapisz sesje do review_sessions
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
       const sessionsToInsert = result.content.sessions.map((session) => ({
-        study_plan_id: generation.study_plan_id,
-        user_id: generation.user_id,
+        study_plan_id: studyPlanId,
+        user_id: userId,
         exercise_label: session.exerciseLabel,
-        review_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+        review_date: today,
         taxonomy_level: session.taxonomyLevel,
         status: "proposed" as const,
         is_ai_generated: true,
@@ -185,47 +108,46 @@ export class AiGenerationService {
           answers: session.answers,
           hints: session.hints,
         } as never,
-        ai_generation_log_id: generationId,
+        notes: null,
       }));
 
-      const { error: insertError } = await this.supabase.from("review_sessions").insert(sessionsToInsert);
+      const { data: inserted, error: insertError } = await this.supabase
+        .from("review_sessions")
+        .insert(sessionsToInsert)
+        .select("*");
 
       if (insertError) {
         throw insertError;
       }
 
-      // 8. Aktualizuj ai_generation_log na succeeded
-      const { error: updateError } = await this.supabase
-        .from("ai_generation_log")
-        .update({
-          state: "succeeded",
-          response: result.content as never,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", generationId);
+      const rows = inserted ?? [];
 
-      if (updateError) {
-        throw updateError;
-      }
+      // 7. Zmapuj do ReviewSessionDto (lekki mapping bez dodatkowego serwisu)
+      return rows.map((row) => ({
+        id: row.id,
+        studyPlanId: row.study_plan_id,
+        exerciseTemplateId: row.exercise_template_id,
+        exerciseLabel: row.exercise_label,
+        reviewDate: row.review_date,
+        taxonomyLevel: row.taxonomy_level,
+        status: row.status,
+        isAiGenerated: row.is_ai_generated,
+        isCompleted: row.is_completed,
+        content: {
+          questions: (row.content as { questions?: unknown[] }).questions ?? [],
+          answers: (row.content as { answers?: unknown[] }).answers ?? [],
+          hints: (row.content as { hints?: unknown[] }).hints ?? [],
+        },
+        notes: row.notes,
+        statusChangedAt: row.status_changed_at,
+        completedAt: row.completed_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
     } catch (error) {
-      // Obsługa błędu - zapisz w ai_generation_log
-      let errorMessage = "Unknown error occurred";
-
       if (error instanceof OpenRouterError) {
-        errorMessage = `OpenRouter error: ${error.message}`;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+        throw this.mapOpenRouterError(error);
       }
-
-      await this.supabase
-        .from("ai_generation_log")
-        .update({
-          state: "failed",
-          error_message: errorMessage,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", generationId);
-
       throw error;
     }
   }

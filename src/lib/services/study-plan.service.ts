@@ -66,7 +66,7 @@ export class StudyPlanService {
       throw error;
     }
 
-    return mapToStudyPlanListItemDto(data, false);
+    return mapToStudyPlanListItemDto(data);
   }
 
   async list(userId: string, options: ListStudyPlansOptions): Promise<Paginated<StudyPlanListItemDto>> {
@@ -91,33 +91,11 @@ export class StudyPlanService {
       throw error;
     }
 
-    const plans = data ?? [];
-    const planIds = plans.map((plan) => plan.id);
-    const pendingPlanIds = new Set<string>();
-
-    if (planIds.length > 0) {
-      const { data: pendingRows, error: pendingError } = await this.supabase
-        .from("ai_generation_log")
-        .select("study_plan_id")
-        .in("study_plan_id", planIds)
-        .eq("state", "pending");
-
-      if (pendingError) {
-        throw pendingError;
-      }
-
-      for (const row of pendingRows ?? []) {
-        if (row.study_plan_id) {
-          pendingPlanIds.add(row.study_plan_id);
-        }
-      }
-    }
-
     return {
-      items: plans.map((plan) => mapToStudyPlanListItemDto(plan, pendingPlanIds.has(plan.id))),
+      items: (data ?? []).map((plan) => mapToStudyPlanListItemDto(plan)),
       page,
       pageSize,
-      total: count ?? plans.length,
+      total: count ?? (data ?? []).length,
     };
   }
 
@@ -146,19 +124,6 @@ export class StudyPlanService {
       throw error;
     }
 
-    // Recompute pending flag based on ai_generation_log
-    const { data: pendingRows, error: pendingError } = await this.supabase
-      .from("ai_generation_log")
-      .select("study_plan_id")
-      .eq("study_plan_id", planId)
-      .eq("state", "pending");
-
-    if (pendingError) {
-      throw pendingError;
-    }
-
-    const hasPending = (pendingRows ?? []).some((row) => row.study_plan_id === planId);
-
-    return mapToStudyPlanListItemDto(data, hasPending);
+    return mapToStudyPlanListItemDto(data);
   }
 }

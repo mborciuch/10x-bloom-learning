@@ -106,10 +106,7 @@ export function CalendarHeader({
         {/* Status filter */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => onStatusFilterChange(value as typeof statusFilter)}
-          >
+          <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as typeof statusFilter)}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="All" />
             </SelectTrigger>

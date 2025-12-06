@@ -62,6 +62,3 @@ export function useStudyPlans(filters: PlansFiltersViewModel) {
     keepPreviousData: true,
   });
 }
-
-
-

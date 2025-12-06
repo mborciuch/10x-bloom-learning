@@ -60,6 +60,3 @@ export function PlansPagination({ page, pageSize, total, onPageChange }: PlansPa
     </nav>
   );
 }
-
-
-

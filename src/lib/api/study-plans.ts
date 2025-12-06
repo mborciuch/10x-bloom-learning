@@ -111,4 +111,3 @@ export async function updateStudyPlan(planId: string, command: UpdateStudyPlanCo
     throw new APIError("UNEXPECTED_ERROR", "Wystąpił nieoczekiwany błąd");
   }
 }
-

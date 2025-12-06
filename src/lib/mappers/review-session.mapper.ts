@@ -69,8 +69,5 @@ export function mapToReviewSessionDto(row: ReviewSessionRow): ReviewSessionDto {
     completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    aiGenerationLogId: row.ai_generation_log_id,
   };
 }
-
-

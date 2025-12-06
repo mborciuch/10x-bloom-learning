@@ -1,7 +1,7 @@
 # POST /api/study-plans – test plan
 
 ## Happy paths
-- **Create plan with valid payload**: `title`, `sourceMaterial` ~500 words, `wordCount` within 200-5000. Expect 201 + DTO with `pendingAiGeneration=false`, `status="active"`, trimmed `title`.
+- **Create plan with valid payload**: `title`, `sourceMaterial` ~500 words, `wordCount` within 200-5000. Expect 201 + DTO with `status="active"`, trimmed `title`.
 - **Title trimming**: Send `title` with leading/trailing spaces; response should return trimmed `title`.
 
 ## Validation failures

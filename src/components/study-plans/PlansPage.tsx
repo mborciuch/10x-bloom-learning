@@ -39,16 +39,10 @@ export function PlansPage() {
       ...state.filters,
       search: debouncedSearch,
     }),
-    [state.filters, debouncedSearch],
+    [state.filters, debouncedSearch]
   );
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useStudyPlans(effectiveFilters);
+  const { data, isLoading, isFetching, error, refetch } = useStudyPlans(effectiveFilters);
 
   useEffect(() => {
     setState((prev) => ({
@@ -110,7 +104,7 @@ export function PlansPage() {
         onError: (error) => {
           toast.error(error.message || "Failed to delete plan. Please try again.");
         },
-      },
+      }
     );
   }, [deletePlanMutation, planToDelete]);
 
@@ -125,10 +119,10 @@ export function PlansPage() {
           onError: (error) => {
             toast.error(error.message || "Failed to archive plan. Please try again.");
           },
-        },
+        }
       );
     },
-    [updateStatusMutation],
+    [updateStatusMutation]
   );
 
   const handleUnarchive = useCallback(
@@ -142,14 +136,39 @@ export function PlansPage() {
           onError: (error) => {
             toast.error(error.message || "Failed to unarchive plan. Please try again.");
           },
-        },
+        }
       );
     },
-    [updateStatusMutation],
+    [updateStatusMutation]
   );
 
   const handleGenerateAI = useCallback((plan: StudyPlanListItemDto) => {
-    console.info("Generate AI sessions requested for plan:", plan.id);
+    const planId = String(plan.id);
+
+    void fetch(`/api/study-plans/${planId}/ai-generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        requestedCount: 10,
+        taxonomyLevels: ["remember", "understand", "apply"],
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          const message =
+            (data && data.error && typeof data.error.message === "string" && data.error.message) ||
+            "Failed to generate AI sessions. Please try again.";
+          throw new Error(message);
+        }
+        toast.success("AI sessions generated successfully.");
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Failed to generate AI sessions. Please try again.";
+        toast.error(message);
+      });
   }, []);
 
   const handleViewSessions = useCallback((plan: StudyPlanListItemDto) => {
@@ -211,5 +230,3 @@ export function PlansPage() {
     </div>
   );
 }
-
-

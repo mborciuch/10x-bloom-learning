@@ -21,5 +21,3 @@ export function PlansPageWrapper() {
     </QueryClientProvider>
   );
 }
-
-

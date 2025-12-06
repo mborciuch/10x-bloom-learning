@@ -26,7 +26,7 @@ export const DELETE: APIRoute = async (context) => {
       {
         status: 400,
         headers: JSON_HEADERS,
-      },
+      }
     );
   }
 
@@ -59,7 +59,7 @@ export const PATCH: APIRoute = async (context) => {
       {
         status: 400,
         headers: JSON_HEADERS,
-      },
+      }
     );
   }
 
@@ -77,7 +77,7 @@ export const PATCH: APIRoute = async (context) => {
       {
         status: 400,
         headers: JSON_HEADERS,
-      },
+      }
     );
   }
 
@@ -93,6 +93,3 @@ export const PATCH: APIRoute = async (context) => {
     return handleError(error);
   }
 };
-
-
-

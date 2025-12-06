@@ -5,8 +5,6 @@ import type { Enums, Tables, TablesInsert, TablesUpdate } from "./db/database.ty
 // ============================================================================
 // Base entity types extracted from database schema for reuse in DTOs
 
-type AuthUserRow = Tables<{ schema: "auth" }, "users">;
-
 type StudyPlanRow = Tables<"study_plans">;
 type StudyPlanInsert = TablesInsert<"study_plans">;
 type StudyPlanUpdate = TablesUpdate<"study_plans">;
@@ -44,7 +42,7 @@ export interface Paginated<TItem> {
 
 /**
  * Study plan list item DTO for GET /api/study-plans
- * Maps database fields to camelCase and adds computed pendingAiGeneration flag
+ * Maps database fields to camelCase
  */
 export interface StudyPlanListItemDto {
   id: StudyPlanRow["id"];
@@ -54,7 +52,6 @@ export interface StudyPlanListItemDto {
   status: StudyPlanRow["status"];
   createdAt: StudyPlanRow["created_at"];
   updatedAt: StudyPlanRow["updated_at"];
-  pendingAiGeneration: boolean;
 }
 
 /**
@@ -203,7 +200,7 @@ export interface CompleteReviewSessionCommand {
 export interface ReviewSessionFeedbackDto {
   id: ReviewSessionFeedbackRow["id"];
   reviewSessionId: ReviewSessionFeedbackRow["review_session_id"];
-  userId: AuthUserRow["id"];
+  userId: ReviewSessionFeedbackRow["user_id"];
   rating: ReviewSessionFeedbackRow["rating"];
   comment: ReviewSessionFeedbackRow["comment"];
   createdAt: ReviewSessionFeedbackRow["created_at"];

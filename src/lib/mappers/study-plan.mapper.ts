@@ -1,10 +1,7 @@
 import type { Tables } from "@/db/database.types";
 import type { StudyPlanListItemDto } from "@/types";
 
-export function mapToStudyPlanListItemDto(
-  row: Tables<"study_plans">,
-  pendingAiGeneration: boolean
-): StudyPlanListItemDto {
+export function mapToStudyPlanListItemDto(row: Tables<"study_plans">): StudyPlanListItemDto {
   return {
     id: row.id,
     title: row.title,
@@ -13,6 +10,5 @@ export function mapToStudyPlanListItemDto(
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    pendingAiGeneration,
   };
 }

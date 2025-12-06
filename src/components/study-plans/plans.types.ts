@@ -28,7 +28,6 @@ export interface PlanCardViewModel {
   status: StudyPlanListItemDto["status"];
   createdAt: StudyPlanListItemDto["createdAt"];
   createdAtRelative: string;
-  pendingAiGeneration: StudyPlanListItemDto["pendingAiGeneration"];
 }
 
 /**
@@ -96,6 +95,3 @@ export interface PlansPaginationProps {
   total: number;
   onPageChange(page: number): void;
 }
-
-
-

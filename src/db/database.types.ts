@@ -1,23 +1,9 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+// This file defines the Database type used by Supabase client.
+// It is based on the current SQL migrations in `supabase/migrations`.
+
+export type Json = string | number | boolean | null | Record<string, Json | undefined> | Json[];
 
 export interface Database {
-  graphql_public: {
-    Tables: Record<never, never>;
-    Views: Record<never, never>;
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: Record<never, never>;
-    CompositeTypes: Record<never, never>;
-  };
   auth: {
     Tables: {
       users: {
@@ -124,136 +110,63 @@ export interface Database {
   };
   public: {
     Tables: {
-      ai_generation_log: {
-        Row: {
-          created_at: string;
-          error_message: string | null;
-          id: string;
-          model_name: string | null;
-          parameters: Json;
-          requested_at: string;
-          response: Json | null;
-          state: Database["public"]["Enums"]["ai_generation_state"];
-          study_plan_id: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          error_message?: string | null;
-          id?: string;
-          model_name?: string | null;
-          parameters: Json;
-          requested_at?: string;
-          response?: Json | null;
-          state?: Database["public"]["Enums"]["ai_generation_state"];
-          study_plan_id: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          error_message?: string | null;
-          id?: string;
-          model_name?: string | null;
-          parameters?: Json;
-          requested_at?: string;
-          response?: Json | null;
-          state?: Database["public"]["Enums"]["ai_generation_state"];
-          study_plan_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "ai_generation_log_study_plan_id_fkey";
-            columns: ["study_plan_id"];
-            isOneToOne: false;
-            referencedRelation: "study_plans";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "ai_generation_log_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-            referencedSchema: "auth";
-          },
-        ];
-      };
       exercise_templates: {
         Row: {
-          created_at: string;
-          created_by: string | null;
-          default_taxonomy_level: Database["public"]["Enums"]["taxonomy_level"] | null;
-          description: string | null;
           id: string;
-          is_active: boolean;
-          is_predefined: boolean;
-          metadata: Json;
           name: string;
-          prompt: string;
+          description: string | null;
+          default_taxonomy_level: Database["public"]["Enums"]["taxonomy_level"] | null;
+          is_active: boolean;
+          metadata: Json;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          default_taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"] | null;
-          description?: string | null;
           id?: string;
-          is_active?: boolean;
-          is_predefined?: boolean;
-          metadata?: Json;
           name: string;
-          prompt: string;
+          description?: string | null;
+          default_taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"] | null;
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
-          created_at?: string;
-          created_by?: string | null;
-          default_taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"] | null;
-          description?: string | null;
           id?: string;
-          is_active?: boolean;
-          is_predefined?: boolean;
-          metadata?: Json;
           name?: string;
-          prompt?: string;
+          description?: string | null;
+          default_taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"] | null;
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "exercise_templates_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-            referencedSchema: "auth";
-          },
-        ];
+        Relationships: [];
       };
       review_session_feedback: {
         Row: {
+          id: string;
+          review_session_id: string;
+          user_id: string;
+          rating: number | null;
           comment: string | null;
           created_at: string;
-          id: string;
-          rating: number | null;
-          review_session_id: string;
-          user_id: string;
         };
         Insert: {
-          comment?: string | null;
-          created_at?: string;
           id?: string;
-          rating?: number | null;
           review_session_id: string;
           user_id: string;
-        };
-        Update: {
+          rating?: number | null;
           comment?: string | null;
           created_at?: string;
+        };
+        Update: {
           id?: string;
-          rating?: number | null;
           review_session_id?: string;
           user_id?: string;
+          rating?: number | null;
+          comment?: string | null;
+          created_at?: string;
         };
         Relationships: [
           {
@@ -275,70 +188,60 @@ export interface Database {
       };
       review_sessions: {
         Row: {
-          ai_generation_log_id: string | null;
-          completed_at: string | null;
-          content: Json;
-          created_at: string;
-          exercise_label: string;
-          exercise_template_id: string | null;
           id: string;
+          study_plan_id: string;
+          user_id: string;
+          exercise_template_id: string | null;
+          exercise_label: string;
+          review_date: string;
+          taxonomy_level: Database["public"]["Enums"]["taxonomy_level"];
+          status: Database["public"]["Enums"]["review_status"];
           is_ai_generated: boolean;
           is_completed: boolean;
-          notes: string | null;
-          review_date: string;
-          status: Database["public"]["Enums"]["review_status"];
+          completed_at: string | null;
           status_changed_at: string;
-          study_plan_id: string;
-          taxonomy_level: Database["public"]["Enums"]["taxonomy_level"];
+          content: Json;
+          notes: string | null;
+          created_at: string;
           updated_at: string;
-          user_id: string;
         };
         Insert: {
-          ai_generation_log_id?: string | null;
-          completed_at?: string | null;
-          content: Json;
-          created_at?: string;
-          exercise_label: string;
-          exercise_template_id?: string | null;
           id?: string;
+          study_plan_id: string;
+          user_id: string;
+          exercise_template_id?: string | null;
+          exercise_label: string;
+          review_date: string;
+          taxonomy_level: Database["public"]["Enums"]["taxonomy_level"];
+          status?: Database["public"]["Enums"]["review_status"];
           is_ai_generated?: boolean;
           is_completed?: boolean;
-          notes?: string | null;
-          review_date: string;
-          status?: Database["public"]["Enums"]["review_status"];
+          completed_at?: string | null;
           status_changed_at?: string;
-          study_plan_id: string;
-          taxonomy_level: Database["public"]["Enums"]["taxonomy_level"];
+          content: Json;
+          notes?: string | null;
+          created_at?: string;
           updated_at?: string;
-          user_id: string;
         };
         Update: {
-          ai_generation_log_id?: string | null;
-          completed_at?: string | null;
-          content?: Json;
-          created_at?: string;
-          exercise_label?: string;
-          exercise_template_id?: string | null;
           id?: string;
+          study_plan_id?: string;
+          user_id?: string;
+          exercise_template_id?: string | null;
+          exercise_label?: string;
+          review_date?: string;
+          taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"];
+          status?: Database["public"]["Enums"]["review_status"];
           is_ai_generated?: boolean;
           is_completed?: boolean;
-          notes?: string | null;
-          review_date?: string;
-          status?: Database["public"]["Enums"]["review_status"];
+          completed_at?: string | null;
           status_changed_at?: string;
-          study_plan_id?: string;
-          taxonomy_level?: Database["public"]["Enums"]["taxonomy_level"];
+          content?: Json;
+          notes?: string | null;
+          created_at?: string;
           updated_at?: string;
-          user_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "review_sessions_ai_generation_log_id_fkey";
-            columns: ["ai_generation_log_id"];
-            isOneToOne: false;
-            referencedRelation: "ai_generation_log";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "review_sessions_exercise_template_id_fkey";
             columns: ["exercise_template_id"];
@@ -365,34 +268,34 @@ export interface Database {
       };
       study_plans: {
         Row: {
-          created_at: string;
           id: string;
-          source_material: string;
-          status: string;
-          title: string;
-          updated_at: string;
           user_id: string;
+          title: string;
+          source_material: string;
           word_count: number;
+          status: string;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          created_at?: string;
           id?: string;
-          source_material: string;
-          status?: string;
-          title: string;
-          updated_at?: string;
           user_id: string;
+          title: string;
+          source_material: string;
           word_count: number;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          created_at?: string;
           id?: string;
-          source_material?: string;
-          status?: string;
-          title?: string;
-          updated_at?: string;
           user_id?: string;
+          title?: string;
+          source_material?: string;
           word_count?: number;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -409,7 +312,6 @@ export interface Database {
     Views: Record<never, never>;
     Functions: Record<never, never>;
     Enums: {
-      ai_generation_state: "pending" | "succeeded" | "failed";
       review_status: "proposed" | "accepted" | "rejected";
       taxonomy_level: "remember" | "understand" | "apply" | "analyze" | "evaluate" | "create";
     };
@@ -487,17 +389,4 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
     ? Database["public"]["Enums"][PublicEnumNameOrOptions]
-    : never;
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends keyof Database["public"]["CompositeTypes"] | { schema: keyof Database },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
-  }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof Database["public"]["CompositeTypes"]
-    ? Database["public"]["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;

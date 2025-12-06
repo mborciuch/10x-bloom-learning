@@ -1,26 +1,14 @@
 import type { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PlansHeaderProps } from "./plans.types";
 
 /**
  * Top toolbar for the study plans page.
  * Contains search input, status filter and CTA to create a new plan.
  */
-export function PlansHeader({
-  search,
-  status,
-  onSearchChange,
-  onStatusChange,
-  onCreateClick,
-}: PlansHeaderProps) {
+export function PlansHeader({ search, status, onSearchChange, onStatusChange, onCreateClick }: PlansHeaderProps) {
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     // Enforce max length at UI level; trimming for API is handled in the hook
     const value = event.target.value.slice(0, 200);
@@ -40,9 +28,7 @@ export function PlansHeader({
     >
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Plany nauki</h1>
-        <p className="text-sm text-muted-foreground">
-          Przeglądaj, filtruj i zarządzaj swoimi planami nauki.
-        </p>
+        <p className="text-sm text-muted-foreground">Przeglądaj, filtruj i zarządzaj swoimi planami nauki.</p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -75,6 +61,3 @@ export function PlansHeader({
     </header>
   );
 }
-
-
-

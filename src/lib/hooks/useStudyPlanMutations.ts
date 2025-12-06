@@ -2,16 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { StudyPlanListItemDto, UpdateStudyPlanCommand } from "@/types";
 import { deleteStudyPlan, updateStudyPlan, APIError } from "@/lib/api/study-plans";
 
-type StudyPlansQueryKey = ["study-plans", unknown] | ["study-plans"];
-
 function invalidateStudyPlans(queryClient: ReturnType<typeof useQueryClient>) {
-  void queryClient.invalidateQueries({ queryKey: ["study-plans"] as StudyPlansQueryKey });
+  void queryClient.invalidateQueries({ queryKey: ["study-plans"] });
 }
 
 export function useDeletePlan() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, APIError, { planId: string }>({
+  return useMutation<unknown, APIError, { planId: string }>({
     mutationFn: ({ planId }) => deleteStudyPlan(planId),
     onSuccess: () => {
       invalidateStudyPlans(queryClient);
@@ -29,6 +27,3 @@ export function useUpdatePlanStatus() {
     },
   });
 }
-
-
-

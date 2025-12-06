@@ -33,10 +33,7 @@ export class ReviewSessionService {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = this.supabase
-      .from("review_sessions")
-      .select("*", { count: "exact" })
-      .eq("user_id", userId);
+    let query = this.supabase.from("review_sessions").select("*", { count: "exact" }).eq("user_id", userId);
 
     if (filters.studyPlanId) {
       query = query.eq("study_plan_id", filters.studyPlanId);
@@ -66,9 +63,7 @@ export class ReviewSessionService {
       query = query.eq("is_ai_generated", filters.isAiGenerated);
     }
 
-    const { data, count, error } = await query
-      .order(sort, { ascending: sortOrder === "asc" })
-      .range(from, to);
+    const { data, count, error } = await query.order(sort, { ascending: sortOrder === "asc" }).range(from, to);
 
     if (error) {
       throw error;
@@ -84,5 +79,3 @@ export class ReviewSessionService {
     };
   }
 }
-
-

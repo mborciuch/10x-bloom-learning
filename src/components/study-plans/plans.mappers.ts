@@ -10,13 +10,9 @@ export function mapToPlanCardViewModel(plan: StudyPlanListItemDto): PlanCardView
     status: plan.status,
     createdAt: plan.createdAt,
     createdAtRelative: formatDistanceToNow(new Date(plan.createdAt), { addSuffix: true }),
-    pendingAiGeneration: plan.pendingAiGeneration,
   };
 }
 
 export function mapToPlanCardViewModels(plans: StudyPlanListItemDto[]): PlanCardViewModel[] {
   return plans.map(mapToPlanCardViewModel);
 }
-
-
-
