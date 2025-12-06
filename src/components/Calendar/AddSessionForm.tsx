@@ -42,7 +42,8 @@ interface AddSessionFormProps {
  * />
  */
 export function AddSessionForm({ studyPlans, onSubmit, onCancel, defaultDate }: AddSessionFormProps) {
-  const { data: templates = [], isLoading: isLoadingTemplates } = useExerciseTemplates();
+  const { data: templatesPage, isLoading: isLoadingTemplates } = useExerciseTemplates();
+  const templates = templatesPage?.items ?? [];
 
   const form = useForm<AddSessionFormData>({
     resolver: zodResolver(addSessionSchema),

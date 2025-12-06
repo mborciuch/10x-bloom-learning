@@ -153,14 +153,8 @@ export class OpenRouterService {
     let parsedContent: TResponse;
 
     if (responseFormat) {
-      // Parsuj JSON zgodnie z schematem
-      try {
-        parsedContent = JSON.parse(rawContent) as TResponse;
-        // Opcjonalnie: walidacja względem schematu
-        // validateAgainstSchema(parsedContent, responseFormat.json_schema.schema);
-      } catch (error) {
-        throw OpenRouterError.parseError(error, rawContent);
-      }
+      // Parsuj JSON zgodnie z schematem (z awaryjnym sanitizowaniem payloadu)
+      parsedContent = this.parseJsonContent<TResponse>(rawContent);
     } else {
       // Zwróć surową treść jako content
       parsedContent = rawContent as TResponse;
@@ -224,5 +218,80 @@ export class OpenRouterService {
     // Zakładamy format "provider/model-name"
     const parts = modelName.split("/");
     return parts.length > 1 ? parts[0] : "unknown";
+  }
+
+  /**
+   * Bezpiecznie parsuje JSON – jeśli model zwróci dodatkowy tekst (np. nagłówki Markdown),
+   * próbujemy wyciągnąć blok JSON zanim rzucimy błąd.
+   */
+  private parseJsonContent<TResponse>(rawContent: string): TResponse {
+    try {
+      return JSON.parse(rawContent) as TResponse;
+    } catch (error) {
+      const sanitized = this.extractJsonPayload(rawContent);
+      if (sanitized) {
+        try {
+          logger.warn("OpenRouter response contained non-JSON prefix, applied fallback sanitizer");
+          return JSON.parse(sanitized) as TResponse;
+        } catch (sanitizedError) {
+          throw OpenRouterError.parseError(sanitizedError, rawContent);
+        }
+      }
+      throw OpenRouterError.parseError(error, rawContent);
+    }
+  }
+
+  private extractJsonPayload(rawContent: string): string | null {
+    const fencedMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fencedMatch?.[1]) {
+      return fencedMatch[1].trim();
+    }
+
+    const balanced = this.findBalancedJsonObject(rawContent);
+    return balanced?.trim() ?? null;
+  }
+
+  /**
+   * Przechodzi po całej odpowiedzi i próbuje znaleźć zbalansowany blok JSON,
+   * ignorując klamry znajdujące się wewnątrz stringów lub w materiałach źródłowych.
+   */
+  private findBalancedJsonObject(rawContent: string): string | null {
+    let depth = 0;
+    let startIndex = -1;
+    let inString = false;
+
+    for (let i = 0; i < rawContent.length; i++) {
+      const char = rawContent[i];
+      const prev = rawContent[i - 1];
+
+      if (char === '"' && prev !== "\\") {
+        inString = !inString;
+        continue;
+      }
+
+      if (inString) {
+        continue;
+      }
+
+      if (char === "{") {
+        if (depth === 0) {
+          startIndex = i;
+        }
+        depth++;
+      } else if (char === "}") {
+        if (depth > 0) {
+          depth--;
+          if (depth === 0 && startIndex !== -1) {
+            const candidate = rawContent.slice(startIndex, i + 1);
+            if (candidate.includes('"sessions"')) {
+              return candidate;
+            }
+            startIndex = -1;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }

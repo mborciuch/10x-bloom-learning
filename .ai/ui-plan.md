@@ -304,14 +304,14 @@ Bloom Learning to aplikacja webowa składająca się z dwóch głównych obszar�
 **Typ**: Modal over current page  
 **Chroniony**
 
-**Główny cel**: Inicjacja generowania sesji przez AI z parametrami.
+**Główny cel**: Synchroniczna inicjacja generowania sesji przez AI z parametrami (bez osobnego workera / stanu pending).
 
 **Kluczowe informacje**:
 
 - Plan title (reference, read-only)
 - Number of sessions (1-50)
 - Bloom taxonomy levels (checkbox group)
-- Estimated generation time
+- Informacja o tym, że generowanie trwa zwykle 30–60 sekund
 
 **Kluczowe komponenty**:
 
@@ -324,80 +324,98 @@ Bloom Learning to aplikacja webowa składająca się z dwóch głównych obszar�
 - `InfoAlert`: "Generation typically takes 30-60 seconds"
 - `Button`: Generate (primary), Cancel (secondary)
 
+**Flow (uproczszony, synchroniczny)**:
+
+- Kliknięcie "Generate" wysyła jedno żądanie `POST /api/study-plans/{planId}/ai-generate` z wartościami formularza.
+- Po submit:
+  - Disable przycisku i pól formularza.
+  - Pokaż spinner na przycisku i komunikat "Generating…".
+- Po sukcesie:
+  - Zamknij modal.
+  - Pokaż toast "Generated X sessions" (liczba z odpowiedzi).
+  - Przeładuj / odśwież widok kalendarza / listy sesji dla danego planu, aby pokazać nowe sesje ze statusem `proposed`.
+- Po błędzie:
+  - Pokaż komunikat błędu pod formularzem + toast (np. "AI generation failed, try again later").
+  - Re-enable przycisk i pola formularza.
+
 **UX/Accessibility/Security**:
 
-- Number input: Default 10, min 1, max 50, stepper buttons
-- Tooltips: Hover lub focus (keyboard accessible)
-- Default selections: Sensible starting point
-- "Select All" / "Clear All" links (convenience)
-- Validation: At least one level required
-- Submit enabled tylko gdy valid
-- Fieldset/legend dla checkbox group
-- ARIA describedby dla tooltips
-- Keyboard: Tab przez checkboxy, Space to toggle, Enter to submit
-- Rate limiting check: Jeśli hit limit → disabled button + tooltip "You've reached 5 generations/hour. Try again in X min"
-- Duplicate check: Jeśli pending generation exists → disabled + tooltip "Generation in progress, view status"
+- Number input: Default 10, min 1, max 50, stepper buttons.
+- Tooltips: Hover lub focus (keyboard accessible).
+- Default selections: Sensible starting point.
+- "Select All" / "Clear All" links (convenience).
+- Validation: At least one level required.
+- Submit enabled tylko gdy valid.
+- Fieldset/legend dla checkbox group.
+- ARIA describedby dla tooltips.
+- Keyboard: Tab przez checkboxy, Space to toggle, Enter to submit.
+- Brak stanu `pendingAiGeneration` w UI – status generowania istnieje tylko jako loader przy submit.
 
 ---
 
-### 2.9. AI Generation Progress
+### 2.9. AI Generation Progress (loading state)
 
-**Ścieżka**: Modal overlay on current page  
-**Typ**: Modal (non-dismissable except background option)  
+**Ścieżka**: Ten sam modal co formularz generowania  
+**Typ**: Inline loading state w modalu (bez osobnego workera / background option)  
 **Chroniony**
 
-**Główny cel**: Monitoring postępu generowania AI, feedback dla użytkownika.
+**Główny cel**: Prosty feedback, że synchroniczne żądanie generowania jest w toku.
 
 **Kluczowe informacje**:
 
-- Status message
-- Progress indicator
-- Generation ID (for support/debugging)
-- Option to background
+- Króty status message: "Generating sessions… This may take 30-60 seconds".
+- Widoczny spinner na przycisku lub w nagłówku modalu.
 
 **Kluczowe komponenty**:
 
-- `Dialog` (shadcn): Centered modal, no close X
-- `ProgressSpinner`: Animated spinner
-- `StatusMessage`: "Generating sessions... This may take 30-60 seconds"
-- `GenerationIdDisplay`: Small text, "Generation ID: abc-123"
-- `Button`: "Continue in Background"
-- `NotificationBar` (jeśli backgrounded): Sticky top bar, "AI generation in progress", click to re-open modal, auto-dismiss on complete
+- `Dialog` (shadcn): Ten sam komponent, co dla formularza.
+- `ProgressSpinner`: Mały spinner obok labela przycisku "Generate" lub w sekcji header.
+- `StatusMessage`: Tekst pomocniczy poniżej przycisku.
 
-**Polling Logic**:
+**Logika**:
 
-- Poll GET /api/ai-generations/{genId} co 3 sekundy
-- Check state: pending → in_progress → succeeded/failed
-- On success: Close modal, toast "Generation complete! Review sessions", link to review page
-- On failure: Show error in modal, "Retry" button, "Contact support" link
+- Brak pollingu i brak `genId` – jedno żądanie → jedna odpowiedź.
+- `isSubmitting` z React Hook Form lub lokalny stan `isGenerating` steruje:
+  - disabled przyciskiem "Generate",
+  - widocznością spinnera,
+  - blokadą zamknięcia modalu (opcjonalnie: allow cancel → abort controller w fetchu).
 
 **UX/Accessibility/Security**:
 
-- Focus trap w modalu
-- ARIA live region: aria-live="polite" dla status updates
-- Screen reader announcements: "Generating sessions, please wait"
-- Background option: Store generation ID w localStorage, polling continues, notification bar visible
-- Click notification bar: Re-open full modal
-- On success: Auto-close modal after 2s (z countdown) OR immediate with toast
-- On failure: Remain in modal z error message i actions
-- Cleanup: Cancel polling on unmount (useEffect cleanup)
-- Timeout handling: If >2min, show "Taking longer than expected" message
+- Focus trap w modalu.
+- ARIA live region: aria-live="polite" dla krótkiego statusu (opcjonalnie).
+- Screen reader announcements: "Generating sessions, please wait".
+- Brak opcji backgroundowania / magazynowania ID generacji – uproszczony, synchroniczny przepływ.
 
 ---
 
 ### 2.10. AI Generation Review
 
-**Ścieżka**: `/app/ai-review/{genId}`  
+**MVP – uproszczony przepływ (bez osobnej strony)**  
+Po udanym wygenerowaniu sesji:
+
+- Backend zapisuje sesje bezpośrednio do `review_sessions` ze statusem `proposed` i `is_ai_generated=true`.
+- Frontend:
+  - Odświeża kalendarz / listę sesji (np. `/app/calendar` filtrowany po `planId`).
+  - Wyróżnia sesje `proposed` (np. badge "Proposed", inny kolor).
+- Użytkownik:
+  - Może wejść w szczegóły sesji (istniejące widoki), edytować treść / datę.
+  - W przyszłości akceptuje / odrzuca sesje przez zmianę `status` (np. `proposed` → `accepted` / `rejected`) – batch actions opcjonalne.
+
+**Future v2 (opcjonalne) – dedykowana strona przeglądu AI**  
+Jeśli będzie potrzebny bardziej rozbudowany review flow, można zaadaptować poniższy koncept:
+
+**Ścieżka**: np. `/app/ai-review/{planId}`  
 **Typ**: Dedykowana strona, chroniona
 
-**Główny cel**: Przegląd, edycja i akceptacja wygenerowanych sesji przed zapisem do kalendarza.
+**Główny cel**: Przegląd, edycja i akceptacja wygenerowanych sesji (status `proposed`) przed finalnym wykorzystaniem w kalendarzu.
 
 **Kluczowe informacje**:
 
 - Plan title (reference)
 - Liczba wygenerowanych sesji
 - Lista sesji z pełnymi szczegółami (date, exercise, taxonomy, questions, answers)
-- Status każdej sesji (proposed)
+- Status każdej sesji (proposed / accepted / rejected)
 
 **Kluczowe komponenty**:
 
@@ -421,22 +439,22 @@ Bloom Learning to aplikacja webowa składająca się z dwóch głównych obszar�
     - Answers: Numbered list, inline editable textarea (1 per answer)
     - Actions: "Save Changes" (if edited), "Remove Session" (danger)
 
-**UX/Accessibility/Security**:
+**UX/Accessibility/Security (v2)**:
 
-- Initial state: All cards collapsed (performance)
-- Expand on click: Smooth animation, scroll to card
-- Inline editing: Click to edit, auto-save on blur OR explicit "Save" button
-- Edited indicator: Visual badge "Edited" na card
-- Remove session: Optimistic removal, undo toast (5s), permanent after timeout
-- Accept All: Confirmation if any edited, then POST /api/ai-generations/{genId}/accept
-- Reject All: Confirmation modal, then DELETE all sessions
-- Partial accept: Future enhancement (select checkboxes)
-- Keyboard: Tab to card, Enter/Space to expand, Tab through fields, Escape to collapse
-- ARIA expanded: aria-expanded="true/false"
-- Focus management: On expand, focus first editable field
-- Ownership validation: 404 jeśli genId nie należy do user
-- Optimistic updates: Save changes lokalne, flush on accept
-- Success: Redirect to /app/calendar with highlighted accepted sessions
+- Initial state: All cards collapsed (performance).
+- Expand on click: Smooth animation, scroll to card.
+- Inline editing: Click to edit, auto-save on blur OR explicit "Save" button.
+- Edited indicator: Visual badge "Edited" na card.
+- Remove session: Optimistic removal, undo toast (5s), permanent after timeout.
+- Accept All: Confirmation if any edited, następnie batch update statusów sesji na `accepted` (np. jedno API z listą ID).
+- Reject All: Confirmation modal, następnie batch update / usunięcie sesji (w zależności od finalnego modelu danych).
+- Partial accept: Future enhancement (select checkboxes).
+- Keyboard: Tab to card, Enter/Space to expand, Tab through fields, Escape to collapse.
+- ARIA expanded: aria-expanded="true/false".
+- Focus management: On expand, focus first editable field.
+- Ownership validation: 404 jeśli planId nie należy do user.
+- Optimistic updates: Save changes lokalne, flush on accept.
+- Success: Redirect / scroll do widoku kalendarza z wyróżnionymi zaakceptowanymi sesjami.
 
 ---
 

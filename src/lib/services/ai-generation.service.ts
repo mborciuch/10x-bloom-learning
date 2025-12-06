@@ -5,6 +5,7 @@ import type { InitiateAiGenerationCommand, AiGeneratedSessionsSchema, TaxonomyLe
 import { OpenRouterService } from "./openrouter.service";
 import { ApiError } from "@/lib/utils/error-handler";
 import { OpenRouterError } from "@/lib/utils/openrouter-errors";
+import { mapToReviewSessionDto } from "@/lib/mappers/review-session.mapper";
 
 export class AiGenerationService {
   private readonly openRouterService: OpenRouterService;
@@ -94,10 +95,10 @@ export class AiGenerationService {
 
       // 6. Zapisz sesje do review_sessions
       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-      const sessionsToInsert = result.content.sessions.map((session) => ({
+      const sessionsToInsert = result.content.sessions.map((session, index) => ({
         study_plan_id: studyPlanId,
         user_id: userId,
-        exercise_label: session.exerciseLabel,
+        exercise_label: this.resolveExerciseLabel(session.exerciseLabel, index),
         review_date: today,
         taxonomy_level: session.taxonomyLevel,
         status: "proposed" as const,
@@ -122,28 +123,8 @@ export class AiGenerationService {
 
       const rows = inserted ?? [];
 
-      // 7. Zmapuj do ReviewSessionDto (lekki mapping bez dodatkowego serwisu)
-      return rows.map((row) => ({
-        id: row.id,
-        studyPlanId: row.study_plan_id,
-        exerciseTemplateId: row.exercise_template_id,
-        exerciseLabel: row.exercise_label,
-        reviewDate: row.review_date,
-        taxonomyLevel: row.taxonomy_level,
-        status: row.status,
-        isAiGenerated: row.is_ai_generated,
-        isCompleted: row.is_completed,
-        content: {
-          questions: (row.content as { questions?: unknown[] }).questions ?? [],
-          answers: (row.content as { answers?: unknown[] }).answers ?? [],
-          hints: (row.content as { hints?: unknown[] }).hints ?? [],
-        },
-        notes: row.notes,
-        statusChangedAt: row.status_changed_at,
-        completedAt: row.completed_at,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
+      // 7. Zmapuj do ReviewSessionDto
+      return rows.map(mapToReviewSessionDto);
     } catch (error) {
       if (error instanceof OpenRouterError) {
         throw this.mapOpenRouterError(error);
@@ -156,6 +137,11 @@ export class AiGenerationService {
     return `Jesteś ekspertem w tworzeniu materiałów edukacyjnych zgodnych z taksonomią Blooma.
     
 Twoje zadanie to generowanie sesji przeglądowych dla studentów na podstawie materiału źródłowego.
+
+WYMAGANIA DOTYCZĄCE ODPOWIEDZI:
+- Musisz zwrócić WYŁĄCZNIE ważny JSON, BEZ żadnego tekstu przed ani po nim.
+- JSON musi być zgodny z dostarczonym schematem (tablica obiektów w polu "sessions").
+- Nie używaj Markdown, nagłówków, komentarzy ani opisów – tylko czysty JSON.
 
 Każda sesja przeglądowa powinna zawierać:
 - Pytania dostosowane do konkretnego poziomu taksonomii Blooma
@@ -186,11 +172,12 @@ Każda sesja powinna zawierać:
 - 5 szczegółowych odpowiedzi
 - 5 wskazówek pomocniczych
 - Odpowiednią etykietę opisującą sesję
-
 Upewnij się, że pytania są:
 - Konkretne i związane z materiałem źródłowym
 - Odpowiednie dla poziomu taksonomii
-- Różnorodne i pokrywające różne aspekty materiału`;
+- Różnorodne i pokrywające różne aspekty materiału
+
+Zwróć OD RAZU gotowy JSON zgodny ze schematem (bez Markdown).`;
   }
 
   private buildResponseSchema() {
@@ -233,6 +220,14 @@ Upewnij się, że pytania są:
       },
       required: ["sessions"],
     };
+  }
+
+  private resolveExerciseLabel(label: string | undefined, index: number): string {
+    const trimmed = (label ?? "").trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+    return `AI Session ${index + 1}`;
   }
 
   private mapOpenRouterError(error: OpenRouterError): ApiError {

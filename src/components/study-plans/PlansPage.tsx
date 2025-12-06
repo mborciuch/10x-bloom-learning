@@ -1,12 +1,13 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import type { StudyPlanListItemDto } from "@/types";
 import type { PlansFiltersViewModel, PlansPageState } from "./plans.types";
-import { useDebounce, useStudyPlans, useDeletePlan, useUpdatePlanStatus } from "@/lib/hooks";
+import { useDebounce, useStudyPlans, useDeletePlan, useUpdatePlanStatus, useAiGenerationMutation } from "@/lib/hooks";
 import { PlansHeader } from "./PlansHeader";
 import { PlansContent } from "./PlansContent";
 import { PlansPagination } from "./PlansPagination";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
+import { AiGenerationDialog, type AiGenerationFormValues } from "./ai-generation";
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -28,9 +29,14 @@ export function PlansPage() {
   });
 
   const [planToDelete, setPlanToDelete] = useState<StudyPlanListItemDto | null>(null);
+  const [aiDialogPlan, setAiDialogPlan] = useState<StudyPlanListItemDto | null>(null);
+  const [aiDialogError, setAiDialogError] = useState<string | null>(null);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const aiGenerationAbortRef = useRef<AbortController | null>(null);
 
   const deletePlanMutation = useDeletePlan();
   const updateStatusMutation = useUpdatePlanStatus();
+  const aiGenerationMutation = useAiGenerationMutation();
 
   const debouncedSearch = useDebounce(state.filters.search, 300);
 
@@ -52,6 +58,12 @@ export function PlansPage() {
       lastError: error ?? prev.lastError,
     }));
   }, [isLoading, isFetching, error]);
+
+  useEffect(() => {
+    return () => {
+      aiGenerationAbortRef.current?.abort();
+    };
+  }, []);
 
   const handleSearchChange = useCallback((value: string) => {
     setState((prev) => ({
@@ -143,33 +155,73 @@ export function PlansPage() {
   );
 
   const handleGenerateAI = useCallback((plan: StudyPlanListItemDto) => {
-    const planId = String(plan.id);
-
-    void fetch(`/api/study-plans/${planId}/ai-generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        requestedCount: 10,
-        taxonomyLevels: ["remember", "understand", "apply"],
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          const data = await response.json().catch(() => null);
-          const message =
-            (data && data.error && typeof data.error.message === "string" && data.error.message) ||
-            "Failed to generate AI sessions. Please try again.";
-          throw new Error(message);
-        }
-        toast.success("AI sessions generated successfully.");
-      })
-      .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : "Failed to generate AI sessions. Please try again.";
-        toast.error(message);
-      });
+    setAiDialogError(null);
+    setAiDialogPlan(plan);
   }, []);
+
+  const handleAiDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        return;
+      }
+
+      if (isAiGenerating) {
+        return;
+      }
+
+      aiGenerationAbortRef.current?.abort();
+      aiGenerationAbortRef.current = null;
+      setAiDialogPlan(null);
+      setAiDialogError(null);
+    },
+    [isAiGenerating]
+  );
+
+  const handleAiFormSubmit = useCallback(
+    async (values: AiGenerationFormValues) => {
+      if (!aiDialogPlan) {
+        toast.error("Select a study plan before generating sessions.");
+        return;
+      }
+
+      setAiDialogError(null);
+      setIsAiGenerating(true);
+
+      const controller = new AbortController();
+      aiGenerationAbortRef.current?.abort();
+      aiGenerationAbortRef.current = controller;
+
+      try {
+        const result = await aiGenerationMutation.mutateAsync({
+          planId: String(aiDialogPlan.id),
+          command: values,
+          signal: controller.signal,
+        });
+
+        const generatedCount = result.sessions?.length ?? values.requestedCount;
+        toast.success(`Generated ${generatedCount} session${generatedCount === 1 ? "" : "s"}.`, {
+          description: "Refresh your calendar to see the new proposed sessions.",
+        });
+
+        setAiDialogPlan(null);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          toast.info("AI generation cancelled.");
+        } else {
+          const message =
+            error instanceof Error ? error.message : "Failed to generate AI sessions. Please try again later.";
+          setAiDialogError(message);
+          toast.error("AI generation failed", {
+            description: message,
+          });
+        }
+      } finally {
+        setIsAiGenerating(false);
+        aiGenerationAbortRef.current = null;
+      }
+    },
+    [aiDialogPlan, aiGenerationMutation]
+  );
 
   const handleViewSessions = useCallback((plan: StudyPlanListItemDto) => {
     const url = new URL(window.location.href);
@@ -226,6 +278,15 @@ export function PlansPage() {
         variant="danger"
         onConfirm={handleConfirmDelete}
         onCancel={() => setPlanToDelete(null)}
+      />
+
+      <AiGenerationDialog
+        open={Boolean(aiDialogPlan)}
+        plan={aiDialogPlan}
+        isSubmitting={isAiGenerating}
+        errorMessage={aiDialogError}
+        onOpenChange={handleAiDialogOpenChange}
+        onSubmit={handleAiFormSubmit}
       />
     </div>
   );

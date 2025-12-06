@@ -10,3 +10,4 @@ export type { StudyPlanDraft } from "./useAutoSaveDraft";
 // Study plans list hooks
 export { useStudyPlans } from "./useStudyPlans";
 export { useDeletePlan, useUpdatePlanStatus } from "./useStudyPlanMutations";
+export { useAiGenerationMutation } from "./useAiGenerationMutation";

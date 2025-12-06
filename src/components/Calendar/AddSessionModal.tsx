@@ -29,7 +29,8 @@ interface AddSessionModalProps {
  */
 export function AddSessionModal({ open, onOpenChange, studyPlans, defaultDate }: AddSessionModalProps) {
   const createSessionMutation = useCreateSession();
-  const { data: templates = [] } = useExerciseTemplates();
+  const { data: templatesPage } = useExerciseTemplates();
+  const templates = templatesPage?.items ?? [];
 
   const handleSubmit = async (formData: AddSessionFormData) => {
     try {
