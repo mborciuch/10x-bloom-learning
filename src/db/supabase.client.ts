@@ -4,7 +4,7 @@ import type { Database } from "./database.types";
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 
-export const DEFAULT_USER_ID = "897d68c7-53b6-477f-a8cf-4bd074585c26";
+export const DEFAULT_USER_ID = "75e1229a-126c-42e6-8b81-7b6fd39fbb25";
 
 export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
