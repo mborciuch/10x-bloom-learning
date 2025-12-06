@@ -4,7 +4,6 @@
 
 - `studyPlans` → `study_plans`
 - `exerciseTemplates` → `exercise_templates`
-- `aiGenerations` → `ai_generation_log`
 - `reviewSessions` → `review_sessions`
 - `reviewSessionFeedback` → `review_session_feedback`
 - `auth` (user metadata) → Supabase Auth `auth.users` (pole `user_metadata`)
@@ -100,10 +99,10 @@
 **MVP Simplification:** Exercise templates are PREDEFINED ONLY (system-wide, read-only for users).
 Templates with AI prompts are populated via seed data. Users cannot create/edit/delete templates in MVP.
 
-| Method | Path                          | Description                     |
-| ------ | ----------------------------- | ------------------------------- |
-| GET    | `/api/exercise-templates`     | List predefined templates only  |
-| GET    | `/api/exercise-templates/{id}`| Get single template (optional)  |
+| Method | Path                           | Description                    |
+| ------ | ------------------------------ | ------------------------------ |
+| GET    | `/api/exercise-templates`      | List predefined templates only |
+| GET    | `/api/exercise-templates/{id}` | Get single template (optional) |
 
 **GET /api/exercise-templates**
 
@@ -138,15 +137,11 @@ Templates with AI prompts are populated via seed data. Users cannot create/edit/
 
 ### AI Generation
 
-| Method | Path                                       | Description                             |
-| ------ | ------------------------------------------ | --------------------------------------- |
-| POST   | `/api/study-plans/{planId}/ai-generations` | Initiate AI generation                  |
-| GET    | `/api/study-plans/{planId}/ai-generations` | List generation attempts (latest first) |
-| GET    | `/api/ai-generations/{genId}`              | Fetch generation status/details         |
-| POST   | `/api/ai-generations/{genId}/accept`       | Accept generated sessions               |
-| POST   | `/api/ai-generations/{genId}/retry`        | Retry failed generation (optional)      |
+| Method | Path                                    | Description                                  |
+| ------ | --------------------------------------- | -------------------------------------------- |
+| POST   | `/api/study-plans/{planId}/ai-generate` | Synchronous AI generation of review sessions |
 
-**POST /api/study-plans/{planId}/ai-generations**
+**POST /api/study-plans/{planId}/ai-generate**
 
 - Request:
   ```json
@@ -157,41 +152,50 @@ Templates with AI prompts are populated via seed data. Users cannot create/edit/
     "modelName": "openrouter/model-id"
   }
   ```
+- Behavior:
+  - Backend:
+    - Pobiera materiał źródłowy planu nauki z `study_plans`.
+    - Wywołuje OpenRouter (zgodnie z `OpenRouterService`).
+    - Na podstawie odpowiedzi tworzy rekordy w `review_sessions` z:
+      - `is_ai_generated = true`
+      - `status = 'proposed'`
+      - poprawnie ustawionym `taxonomy_level`, `exercise_label`, `content`.
+  - UI:
+    - Czeka synchronicznie na odpowiedź (loader).
+    - Po sukcesie wyświetla wygenerowane sesje w kalendarzu jako propozycje.
 - Response:
   ```json
   {
-    "id": "uuid",
-    "studyPlanId": "uuid",
-    "state": "pending",
-    "requestedAt": "string",
-    "modelName": "string|null",
-    "parameters": {
-      "requestedCount": 10,
-      "taxonomyLevels": ["remember", "apply"],
-      "templateIds": ["uuid"]
-    }
+    "sessions": [
+      {
+        "id": "uuid",
+        "studyPlanId": "uuid",
+        "exerciseTemplateId": "uuid|null",
+        "exerciseLabel": "string",
+        "reviewDate": "string",
+        "taxonomyLevel": "remember|...",
+        "status": "proposed",
+        "isAiGenerated": true,
+        "isCompleted": false,
+        "content": {
+          "questions": [],
+          "answers": [],
+          "hints": []
+        },
+        "notes": "string|null",
+        "statusChangedAt": "string",
+        "completedAt": "string|null",
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ]
   }
   ```
-- Success: `202 Accepted` (async processing)
-- Errors: `400` (no levels/count out of range), `409` (pending generation already exists)
+- Success: `201 Created`
+- Errors: `400` (no levels/count out of range), `404` (plan not found / ownership), `401` (unauthorized)
 
-**GET /api/study-plans/{planId}/ai-generations**
-
-- Query: `state`, `page`, `pageSize`
-- Response: paginated list with `response` summary, `errorMessage`
-
-**POST /api/ai-generations/{genId}/accept**
-
-- Request (optional adjustments):
-  ```json
-  {
-    "sessionIds": ["uuid"],
-    "acceptAll": true
-  }
-  ```
-- Effect: Marks associated `review_sessions` as `accepted`, sets `ai_generation_log.state` to `succeeded`
-- Success: `200 OK`
-- Errors: `400`, `404`, `409` (already accepted), `422` (session IDs mismatch)
+> **Future v2 (async mode, nie implementować teraz):**
+> Asynchroniczne logowanie prób generowania (tabela `ai_generation_log`, endpointy listujące, retry, accept itp.) zostało usunięte z aktualnego planu API i może wrócić w przyszłej wersji.
 
 ### Review Sessions
 
@@ -419,7 +423,7 @@ Przechowywane w `auth.users.user_metadata.onboardingCompletedAt`; frontend odczy
 
 - Validate `requestedCount` (1-50 default).
 - Ensure at least one taxonomy level selected.
-- Persist `parameters` JSON schema (`requestedCount`, `taxonomyLevels`, `templateIds`).
+- Persist `parameters` JSON schema (`requestedCount`, `taxonomyLevels`, `templateIds`). // TODO: updated in new sync flow
 - On generation request:
   - Create `ai_generation_log` with `state=pending`.
   - Kick off background worker (Edge Function/Queue) to call OpenRouter.

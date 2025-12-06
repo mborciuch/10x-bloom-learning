@@ -13,8 +13,6 @@ type StudyPlanUpdate = TablesUpdate<"study_plans">;
 
 type ExerciseTemplateRow = Tables<"exercise_templates">;
 
-type AiGenerationLogRow = Tables<"ai_generation_log">;
-
 type ReviewSessionRow = Tables<"review_sessions">;
 type ReviewSessionInsert = TablesInsert<"review_sessions">;
 type ReviewSessionUpdate = TablesUpdate<"review_sessions">;
@@ -25,7 +23,6 @@ type ReviewSessionFeedbackInsert = TablesInsert<"review_session_feedback">;
 // Database enums
 type TaxonomyLevel = Enums<"taxonomy_level">;
 type ReviewStatus = Enums<"review_status">;
-type AiGenerationState = Enums<"ai_generation_state">;
 
 // ============================================================================
 // UTILITY TYPES
@@ -109,65 +106,18 @@ export interface ExerciseTemplateDto {
 }
 
 // ============================================================================
-// AI GENERATION
+// AI GENERATION (SYNC ENDPOINT COMMAND)
 // ============================================================================
 
 /**
- * AI generation parameters stored in ai_generation_log.parameters JSON field
- * Defines what the user requested for AI generation
- */
-export interface AiGenerationParametersDto {
-  requestedCount: number;
-  taxonomyLevels: TaxonomyLevel[];
-  templateIds?: string[];
-}
-
-/**
- * AI generation DTO for GET /api/ai-generations/{genId}
- * Represents complete AI generation attempt with status and results
- */
-export interface AiGenerationDto {
-  id: AiGenerationLogRow["id"];
-  studyPlanId: AiGenerationLogRow["study_plan_id"];
-  state: AiGenerationState;
-  requestedAt: AiGenerationLogRow["requested_at"];
-  modelName: AiGenerationLogRow["model_name"];
-  parameters: AiGenerationParametersDto;
-  response: AiGenerationLogRow["response"];
-  errorMessage: AiGenerationLogRow["error_message"];
-}
-
-/**
- * Command for POST /api/study-plans/{planId}/ai-generations
- * Initiates async AI generation of review sessions
+ * Command for POST /api/study-plans/{planId}/ai-generate
+ * Initiates synchronous AI generation of review sessions
  */
 export interface InitiateAiGenerationCommand {
-  requestedCount: AiGenerationParametersDto["requestedCount"];
-  taxonomyLevels: AiGenerationParametersDto["taxonomyLevels"];
+  requestedCount: number;
+  taxonomyLevels: TaxonomyLevel[];
   includePredefinedTemplateIds?: string[];
-  modelName?: AiGenerationLogRow["model_name"];
-}
-
-/**
- * Command for POST /api/ai-generations/{genId}/accept
- * Discriminated union: either accept all or specify session IDs
- */
-export type AcceptAiGenerationCommand =
-  | {
-      acceptAll: true;
-      sessionIds?: undefined;
-    }
-  | {
-      acceptAll?: false;
-      sessionIds: string[];
-    };
-
-/**
- * Command for POST /api/ai-generations/{genId}/retry
- * Retries failed AI generation with optional model override
- */
-export interface RetryAiGenerationCommand {
-  modelName?: AiGenerationLogRow["model_name"];
+  modelName?: string;
 }
 
 // ============================================================================
@@ -204,7 +154,6 @@ export interface ReviewSessionDto {
   completedAt: ReviewSessionRow["completed_at"];
   createdAt: ReviewSessionRow["created_at"];
   updatedAt: ReviewSessionRow["updated_at"];
-  aiGenerationLogId: ReviewSessionRow["ai_generation_log_id"];
 }
 
 /**
@@ -331,4 +280,4 @@ export interface AiGeneratedSessionsSchema {
 // ============================================================================
 // Re-export commonly used database types for convenience
 
-export type { TaxonomyLevel, ReviewStatus, AiGenerationState };
+export type { TaxonomyLevel, ReviewStatus };

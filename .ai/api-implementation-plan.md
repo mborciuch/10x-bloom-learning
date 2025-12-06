@@ -51,7 +51,9 @@
 
 1. Pobierz user_id z `context.locals.supabase.auth.getUser()`
 2. Zbuduj query do `study_plans` z filtrami
-3. Dla każdego planu: sprawdź czy istnieje pending AI generation (JOIN lub subquery na `ai_generation_log`)
+3. Dla każdego planu:
+   - policz liczbę powiązanych sesji `review_sessions` ze statusem `proposed` i `is_ai_generated = true`
+   - na tej podstawie ustaw `pendingAiGeneration = count > 0`
 4. Zastosuj paginację i sortowanie
 5. Zmapuj wyniki do DTO (snake_case → camelCase)
 6. Zwróć `{items, page, pageSize, total}`
@@ -166,7 +168,8 @@
 3. Oblicz agregaty:
    - `totalSessions`: COUNT z `review_sessions` WHERE `study_plan_id = planId`
    - `completedSessions`: COUNT WHERE `is_completed = true`
-4. Sprawdź pending AI generation
+4. Oblicz `pendingAiGeneration` jako `EXISTS` co najmniej jednej sesji w `review_sessions`
+   z `study_plan_id = planId`, `is_ai_generated = true` i `status = 'proposed'`
 5. Zmapuj do DTO
 
 **Bezpieczeństwo:**
@@ -266,32 +269,26 @@
 
 1. Waliduj `planId`
 2. Sprawdź czy plan należy do usera
-3. Sprawdź czy nie ma active AI generation (`state = 'pending'`)
-4. DELETE (cascade: `review_sessions`, `review_session_feedback`, `ai_generation_log`)
-5. Zwróć 204
+3. DELETE (cascade: `review_sessions`, `review_session_feedback`)
+4. Zwróć 204
 
 **Walidacja biznesowa:**
 
-- Nie pozwól usunąć jeśli `ai_generation_log.state = 'pending'`
 - Cascade delete jest obsłużony przez DB constraints
 
 **Bezpieczeństwo:**
 
 - RLS + ownership check
-- Transakcja: abort pending AI tasks (jeśli background worker)
 
 **Obsługa błędów:**
 
 - `404 Not Found` - plan nie istnieje
-- `409 Conflict` - active AI generation
 - `401 Unauthorized`
 
 **Kroki implementacji:**
 
 1. `StudyPlanService.delete(userId, planId)`
-2. Check pending generation przed usunięciem
-3. Optional: abort background worker
-4. Return proper status codes
+2. Return proper status codes
 
 ---
 
@@ -384,161 +381,83 @@ Na razie lista templates wystarczy.
 
 ## 3. AI Generation Endpoints
 
-### 3.1. POST /api/study-plans/[planId]/ai-generations
+### 3.1. POST /api/study-plans/[planId]/ai-generate
 
-**Przegląd:** Inicjuje asynchroniczne generowanie sesji przez AI.
+**Przegląd:** Synchroniczne generowanie sesji przez AI dla wybranego planu nauki.  
+Endpoint wywołuje OpenRouter i od razu tworzy propozycje sesji w tabeli `review_sessions` ze statusem `proposed`.
 
 **Request:**
 
 - Metoda: `POST`
-- URL: `/api/study-plans/{planId}/ai-generations`
+- URL: `/api/study-plans/{planId}/ai-generate`
 - Body: `InitiateAiGenerationCommand`
 
 **Response:**
 
-- Status: `202 Accepted` (async processing)
-- Body: `AiGenerationDto`
+- Status: `201 Created`
+- Body:
+  - Lista wygenerowanych sesji w formacie `ReviewSessionDto[]` (nowo utworzone rekordy z `status='proposed'`, `isAiGenerated=true`)
+  - Opcjonalnie opakowana w prosty obiekt `{ sessions: ReviewSessionDto[] }`
 
 **Wykorzystywane typy:**
 
 - `InitiateAiGenerationCommand`
-- `AiGenerationDto`
-- `AiGenerationParametersDto`
+- `ReviewSessionDto`
+- `ReviewSessionContentDto`
+- (pośrednio) `AiGeneratedSessionsSchema` z `src/types.ts` jako JSON schema do OpenRouter
 
 **Przepływ danych:**
 
-1. Waliduj request body
-2. Sprawdź ownership planu
-3. Sprawdź czy nie istnieje pending generation dla tego planu
-4. Utwórz wpis w `ai_generation_log` z `state='pending'`
-5. Kick off background worker (Edge Function/Queue)
-6. Zwróć 202 z creation response
+1. Waliduj request body (Zod) – `requestedCount`, `taxonomyLevels`, opcjonalne `includePredefinedTemplateIds`, `modelName`.
+2. Sprawdź ownership planu (`study_plans.user_id = auth.uid()`).
+3. Pobierz `source_material` oraz `title` z `study_plans`.
+4. Zbuduj prompty (system + user) i JSON Schema (`AiGeneratedSessionsSchema`).
+5. Wywołaj `OpenRouterService.generateCompletion<AiGeneratedSessionsSchema>(...)`.
+6. Na podstawie odpowiedzi zbuduj batch insert do `review_sessions`:
+   - `is_ai_generated = true`
+   - `status = 'proposed'`
+   - `taxonomy_level` z odpowiedzi
+   - `exercise_label` z odpowiedzi
+   - `content` jako JSON (questions, answers, hints)
+   - `review_date` wg ustalonej logiki (np. od jutra, co kilka dni – opisane osobno).
+7. Wykonaj INSERT z `returning *`.
+8. Zmapuj wstawione rekordy do `ReviewSessionDto[]` i zwróć je w odpowiedzi.
 
 **Walidacja biznesowa:**
 
-- `requestedCount`: 1-50 (default range)
-- `taxonomyLevels`: at least one, valid enum values
-- `includePredefinedTemplateIds`: validate templates exist
-- No pending generation: `SELECT WHERE study_plan_id = ? AND state = 'pending'`
+- `requestedCount`: 1-50 (default range).
+- `taxonomyLevels`: co najmniej jeden, poprawne enumy `TaxonomyLevel`.
+- `includePredefinedTemplateIds`: jeśli podane, muszą istnieć w `exercise_templates` i być `is_active = true`.
 
 **Bezpieczeństwo:**
 
-- Idempotency key header (optional)
+- Auth przez Supabase JWT (`auth.getUser()`).
+- RLS na `study_plans` i `review_sessions` + jawne sprawdzenie ownershipu w service layer.
 
 **Obsługa błędów:**
 
-- `400` - invalid count/levels
-- `404` - plan not found
-- `409` - pending generation exists
+- `400` – walidacja (count, poziomy, JSON body).
+- `404` – plan nie istnieje lub nie należy do użytkownika, brak templatek z listy.
+- `401` – brak/niepoprawny token.
+- `500` – błędy OpenRouter mapowane na `ApiError` (zgodnie z `openrouter.service`).
 
 **Kroki implementacji:**
 
-1. Zod schema z array validation
-2. `AiGenerationService.initiate(userId, planId, command)`
-3. Create log entry
-4. Invoke background worker (Edge Function URL)
-5. Return 202 with log data
+1. Zdefiniuj Zod schema dla `InitiateAiGenerationCommand`.
+2. Utwórz `AiGenerationService.generateReviewSessions(userId, planId, command)` (synchroniczny, bez `ai_generation_log`).
+3. W serwisie:
+   - pobierz plan,
+   - wywołaj `OpenRouterService`,
+   - przygotuj dane i wykonaj batch insert do `review_sessions`,
+   - zwróć wstawione rekordy.
+4. W endpointcie:
+   - wykonaj auth check,
+   - walidację body,
+   - wywołaj serwis,
+   - zwróć `201` z listą sesji.
 
-**Background Worker Flow:**
-
-1. Fetch generation log
-2. Call OpenRouter API with source material + templates
-3. Parse AI response → review sessions data
-4. INSERT batch do `review_sessions` z `status='proposed'`, `is_ai_generated=true`
-5. UPDATE `ai_generation_log`: `state='succeeded'`, `response=json`, `completed_at=now()`
-6. On error: `state='failed'`, `error_message`
-
----
-
-### 3.2. GET /api/study-plans/[planId]/ai-generations
-
-**Przegląd:** Lista prób generowania dla planu (latest first).
-
-**Query params:**
-
-- `state`: `pending` | `succeeded` | `failed`
-- `page`, `pageSize`
-
-**Response:**
-
-- `Paginated<AiGenerationDto>`
-
-**Order:** `requested_at DESC`
-
----
-
-### 3.3. GET /api/ai-generations/[genId]
-
-**Przegląd:** Szczegóły konkretnej generacji z pełnym response/error.
-
-**Response:**
-
-- Body: `AiGenerationDto`
-
-**Użycie:**
-
-- Frontend polling dla pending generations
-- Wyświetlanie error messages
-
----
-
-### 3.4. POST /api/ai-generations/[genId]/accept
-
-**Przegląd:** Akceptuje wygenerowane sesje (transakcja).
-
-**Request:**
-
-- Body: `AcceptAiGenerationCommand` (discriminated union)
-  - `{acceptAll: true}` OR
-  - `{sessionIds: [...]}`
-
-**Przepływ danych (transakcja):**
-
-1. Sprawdź czy generation należy do usera
-2. Sprawdź `state != 'succeeded'` → error
-3. Sprawdź czy już zaakceptowano
-4. Jeśli `acceptAll`:
-   - UPDATE all sessions WHERE `ai_generation_log_id = genId` SET `status='accepted'`, `status_changed_at=now()`
-5. Jeśli `sessionIds`:
-   - Waliduj że sessions należą do tego generation
-   - UPDATE tylko wybrane
-   - Optional: mark pozostałe jako `rejected`
-6. UPDATE `ai_generation_log`: może dodać flag `accepted_at`
-7. COMMIT
-
-**Obsługa błędów:**
-
-- `400` - bad request
-- `404` - generation not found
-- `409` - already accepted
-- `422` - session IDs mismatch
-
-**Kroki implementacji:**
-
-1. Zod schema dla discriminated union
-2. `AiGenerationService.accept(userId, genId, command)`
-3. Transaction wrapper
-4. Validate session ownership
-
----
-
-### 3.5. POST /api/ai-generations/[genId]/retry
-
-**Przegląd:** Retry failed generation (optional feature).
-
-**Request:**
-
-- Body: `RetryAiGenerationCommand`
-
-**Walidacja:**
-
-- `state = 'failed'`
-- Optional: same or different `modelName`
-
-**Przepływ:**
-
-- Create new log entry OR reset existing to `pending`
-- Kick off worker again
+> **Future v2 (async mode, nie implementować teraz):**  
+> Można dodać osobne logowanie prób generowania (np. tabela `ai_generation_log`), endpointy listujące historie generacji, retry oraz workflow accept na poziomie logu. Obecne MVP bazuje wyłącznie na synchronicznym wywołaniu i statusach `review_sessions`.
 
 ---
 
