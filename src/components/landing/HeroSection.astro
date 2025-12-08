@@ -1,0 +1,122 @@
+---
+import { Button } from "@/components/ui/button";
+import type { HeroContent } from "./landing.types";
+
+const heroContent: HeroContent = {
+  title: "Zastąp ręczne planowanie powtórek inteligentnym kalendarzem AI",
+  subtitle:
+    "Bloom Learning generuje plan powtórek w oparciu o taksonomię Blooma i daje Ci pełną kontrolę nad nauką – idealne dla profesjonalistów z branż technicznych.",
+  primaryCta: {
+    label: "Załóż darmowe konto",
+    href: "/register",
+    variant: "primary",
+    ariaLabel: "Załóż darmowe konto w Bloom Learning",
+  },
+  secondaryCta: {
+    label: "Zaloguj się",
+    href: "/login",
+    variant: "secondary",
+    ariaLabel: "Przejdź do logowania w Bloom Learning",
+  },
+};
+---
+
+<section
+  aria-labelledby="hero-heading"
+  class="grid gap-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-center"
+>
+  <div class="space-y-6">
+    <div class="space-y-3">
+      <p class="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+        Kalendarz jako centrum nauki
+      </p>
+      <h1
+        id="hero-heading"
+        class="text-balance text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl"
+      >
+        {heroContent.title}
+      </h1>
+      <p class="text-balance text-sm text-muted-foreground sm:text-base">
+        {heroContent.subtitle}
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <Button client:load asChild size="lg">
+        <a
+          href={heroContent.primaryCta.href}
+          aria-label={heroContent.primaryCta.ariaLabel}
+        >
+          {heroContent.primaryCta.label}
+        </a>
+      </Button>
+
+      {heroContent.secondaryCta && (
+        <Button
+          client:load
+          asChild
+          size="lg"
+          variant="outline"
+        >
+          <a
+            href={heroContent.secondaryCta.href}
+            aria-label={heroContent.secondaryCta.ariaLabel}
+          >
+            {heroContent.secondaryCta.label}
+          </a>
+        </Button>
+      )}
+    </div>
+
+    <div class="text-xs text-muted-foreground sm:text-sm">
+      <a
+        href="#how-it-works"
+        class="font-medium text-primary hover:text-primary/90 hover:underline"
+      >
+        Zobacz jak działa Bloom Learning
+      </a>
+    </div>
+
+    <ul class="mt-2 space-y-1.5 text-sm text-muted-foreground">
+      <li>• AI‑generowane sesje powtórkowe dopasowane do poziomów Blooma.</li>
+      <li>• Kalendarz jako jedno miejsce do planowania i realizacji nauki.</li>
+      <li>• Pełna kontrola nad planem – możesz edytować i dodawać sesje ręcznie.</li>
+    </ul>
+  </div>
+
+  <div class="relative hidden h-full md:block">
+    <div
+      class="relative ml-auto aspect-[4/3] max-w-md overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-primary/5 via-background to-secondary/5 shadow-lg"
+      aria-hidden="true"
+    >
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(129,140,248,0.18),_transparent_55%)]" />
+      <div class="relative flex h-full flex-col justify-between p-5">
+        <div class="space-y-2">
+          <p class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Przykładowy plan nauki
+          </p>
+          <p class="text-sm font-semibold text-foreground">
+            Egzamin z anatomii – 14 tygodni powtórek
+          </p>
+        </div>
+        <div class="space-y-2 rounded-xl bg-background/80 p-3 text-xs shadow-sm ring-1 ring-border/70">
+          <div class="flex items-center justify-between">
+            <span class="font-medium">Dzisiejsza sesja</span>
+            <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+              AI wygenerowana
+            </span>
+          </div>
+          <p class="text-muted-foreground">
+            20 pytań na poziomie zastosowania (Apply) i analizy (Analyze).
+          </p>
+          <div class="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Start: 18:00</span>
+            <span>Szacowany czas: 25 min</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+

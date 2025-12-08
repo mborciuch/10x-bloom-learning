@@ -1,8 +1,15 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
+import PublicLayout from "../layouts/PublicLayout.astro";
+import HeroSection from "../components/landing/HeroSection.astro";
+import FeaturesGrid from "../components/landing/FeaturesGrid.astro";
+import HowItWorksSection from "../components/landing/HowItWorksSection.astro";
+import LandingFooter from "../components/landing/LandingFooter.astro";
 ---
 
-<Layout>
-  <Welcome />
-</Layout>
+<PublicLayout title="Bloom Learning – Ucz się mądrzej">
+  <HeroSection />
+  <FeaturesGrid />
+  <HowItWorksSection />
+  <LandingFooter slot="footer" />
+</PublicLayout>
+

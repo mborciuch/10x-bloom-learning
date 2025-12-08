@@ -1,0 +1,45 @@
+---
+import type { FooterLink, FooterProps } from "./landing.types";
+
+const defaultLinks: FooterLink[] = [
+  {
+    label: "Polityka prywatności",
+    href: "#",
+  },
+  {
+    label: "Kontakt",
+    href: "#",
+  },
+];
+
+const currentYear = new Date().getFullYear();
+const defaultCopyright = `© ${currentYear} Bloom Learning. Wszelkie prawa zastrzeżone.`;
+
+const { links = defaultLinks, copyrightLabel = defaultCopyright } = Astro.props as Partial<FooterProps>;
+---
+
+<footer class="border-t border-border/60 bg-background/80">
+  <div
+    class="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
+  >
+    <p>{copyrightLabel}</p>
+    <nav aria-label="Linki w stopce">
+      <ul class="flex flex-wrap gap-3">
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                class="hover:text-foreground"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</footer>

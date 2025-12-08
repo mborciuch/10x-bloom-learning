@@ -44,3 +44,4 @@ export const ExerciseTemplateListQuerySchema = z
 
 export type ExerciseTemplateListQueryInput = z.infer<typeof ExerciseTemplateListQuerySchema>;
 
+

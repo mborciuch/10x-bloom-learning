@@ -1,0 +1,82 @@
+---
+import type { LandingFeature } from "./landing.types";
+
+const features: LandingFeature[] = [
+  {
+    id: "ai-plans",
+    title: "Plany powtórek zasilane AI",
+    description:
+      "Wklejasz materiał, a Bloom generuje spersonalizowany plan sesji powtórek w oparciu o taksonomię Blooma – od zapamiętywania po analizę i tworzenie.",
+    icon: "✨",
+  },
+  {
+    id: "calendar-first",
+    title: "Kalendarz jako centrum nauki",
+    description:
+      "Wszystkie powtórki widzisz w jednym, czytelnym kalendarzu – szybko sprawdzasz, co masz do zrobienia dzisiaj i w kolejnych dniach.",
+    icon: "📅",
+  },
+  {
+    id: "manual-control",
+    title: "Manualne powtórki, gdy ich potrzebujesz",
+    description:
+      "Obok automatycznie wygenerowanych powtórek możesz dodawać własne sesje ręcznie, dopasowując harmonogram do swojego rytmu pracy.",
+    icon: "✏️",
+  },
+  {
+    id: "full-control",
+    title: "Pełna kontrola nad planem",
+    description:
+      "Edytujesz, przekładasz i usuwasz sesje tak, aby plan nauki realnie wspierał utrwalanie wiedzy, a nie blokował Twojego kalendarza.",
+    icon: "🎯",
+  },
+];
+---
+
+<section
+  aria-labelledby="features-heading"
+  class="mt-12 border-t border-border/60 pt-10 sm:mt-16 sm:pt-14"
+>
+  <div class="space-y-4">
+    <h2
+      id="features-heading"
+      class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
+    >
+      Co zyskasz z Bloom Learning?
+    </h2>
+    <p class="max-w-2xl text-sm text-muted-foreground sm:text-base">
+      Bloom łączy generowanie planów z AI, kalendarz i manualne powtórki w jedno narzędzie, które oszczędza Twój czas
+      i podnosi jakość nauki.
+    </p>
+  </div>
+
+  <div
+    class="mt-8 grid gap-5 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4"
+  >
+    {features.map((feature) => (
+      <article
+        class="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-sm"
+      >
+        {feature.icon && (
+          <div
+            class="inline-flex size-9 items-center justify-center rounded-lg bg-primary/5 text-lg"
+            aria-hidden="true"
+          >
+            <span>{feature.icon}</span>
+          </div>
+        )}
+        <div class="space-y-1">
+          <h3 class="text-sm font-semibold tracking-tight">
+            {feature.title}
+          </h3>
+          <p class="text-xs text-muted-foreground sm:text-sm">
+            {feature.description}
+          </p>
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+
+
+
