@@ -1,0 +1,28 @@
+---
+import PublicLayout from "../layouts/PublicLayout.astro";
+import AuthLayout from "../components/auth/AuthLayout.astro";
+import { LoginForm } from "../components/auth/LoginForm";
+---
+
+<PublicLayout title="Zaloguj się — Bloom Learning">
+  <AuthLayout
+    eyebrow="Witaj ponownie"
+    title="Zaloguj się do Bloom Learning"
+    description="Wróć do kalendarza powtórek i kontynuuj naukę opartą o taksonomię Blooma oraz automatyczne sesje AI."
+    highlights={[
+      "Szybki podgląd dzisiejszych sesji i statusów planów.",
+      "Bezpieczne logowanie z opcją zapamiętania urządzenia.",
+      "Dostęp mobilny i desktopowy z tym samym doświadczeniem.",
+    ]}
+  >
+    <LoginForm client:load />
+
+    <div slot="aside" class="text-sm text-muted-foreground">
+      Masz kłopot z logowaniem? Napisz na{" "}
+      <a class="text-primary font-semibold hover:underline" href="mailto:support@bloomlearning.com">
+        support@bloomlearning.com
+      </a>{" "}
+      – odpowiadamy w ciągu 24h.
+    </div>
+  </AuthLayout>
+</PublicLayout>

@@ -1,0 +1,26 @@
+---
+import PublicLayout from "../layouts/PublicLayout.astro";
+import AuthLayout from "../components/auth/AuthLayout.astro";
+import { RegisterForm } from "../components/auth/RegisterForm";
+---
+
+<PublicLayout title="Załóż konto — Bloom Learning">
+  <AuthLayout
+    eyebrow="Nowe konto"
+    title="Rozpocznij naukę z Bloom Learning"
+    description="Wykorzystaj AI do planowania i prowadzenia powtórek z pełną kontrolą nad kalendarzem oraz taksonomią Blooma."
+    highlights={[
+      "Twórz plany nauki i generuj sesje AI w mniej niż minutę.",
+      "Monitoruj kalendarz i statusy sesji na każdym urządzeniu.",
+      "Korzystaj z pełnej historii i analityki postępów.",
+    ]}
+  >
+    <RegisterForm client:load />
+
+    <div slot="aside" class="text-sm text-muted-foreground">
+      Zakładając konto zgadzasz się na przetwarzanie danych zgodnie z polityką prywatności Bloom Learning. Możesz ją
+      przeczytać w dowolnym momencie pod adresem{" "}
+      <a class="text-primary font-semibold hover:underline" href="/privacy">bloomlearning.com/privacy</a>.
+    </div>
+  </AuthLayout>
+</PublicLayout>
