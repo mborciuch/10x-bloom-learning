@@ -1,24 +1,27 @@
 import { defineMiddleware } from "astro:middleware";
 
-import { supabaseClient } from "../db/supabase.client.ts";
+import { createSupabaseServerClient } from "@/db/supabase.client";
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  // Make supabase client available in context.locals
-  context.locals.supabase = supabaseClient;
+const PUBLIC_PAGES = new Set(["/", "/login", "/register", "/forgot-password"]);
 
-  // Authentication temporarily disabled for development
-  // TODO: Re-enable authentication before production
-  // if (context.url.pathname.startsWith("/app")) {
-  //   const {
-  //     data: { user },
-  //     error,
-  //   } = await supabaseClient.auth.getUser();
+export const onRequest = defineMiddleware(async ({ request, cookies, locals, url, redirect }, next) => {
+  const supabase = createSupabaseServerClient({ request, cookies });
+  locals.supabase = supabase;
 
-  //   if (error || !user) {
-  //     const returnUrl = encodeURIComponent(context.url.pathname);
-  //     return context.redirect(`/login?returnUrl=${returnUrl}`);
-  //   }
-  // }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  locals.user = user ?? null;
+
+  if (!user && url.pathname.startsWith("/app")) {
+    const returnUrl = encodeURIComponent(`${url.pathname}${url.search}`);
+    return redirect(`/login?returnUrl=${returnUrl}`);
+  }
+
+  if (user && PUBLIC_PAGES.has(url.pathname)) {
+    return redirect("/app/calendar");
+  }
 
   return next();
 });

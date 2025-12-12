@@ -1,9 +1,9 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { StudyPlanService } from "@/lib/services/study-plan.service";
 import { handleError, ApiError } from "@/lib/utils/error-handler";
+import { getAuthContext, unauthorizedResponse } from "@/lib/utils/auth-context";
 import type { UpdateStudyPlanCommand } from "@/types";
 
 const JSON_HEADERS = {
@@ -11,8 +11,9 @@ const JSON_HEADERS = {
 };
 
 export const GET: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
   const planId = context.params.planId;
 
   if (!planId) {
@@ -55,8 +56,9 @@ export const GET: APIRoute = async (context) => {
 };
 
 export const DELETE: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
   const planId = context.params.planId;
 
   if (!planId) {
@@ -88,8 +90,9 @@ export const DELETE: APIRoute = async (context) => {
 };
 
 export const PATCH: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
   const planId = context.params.planId;
 
   if (!planId) {

@@ -3,10 +3,10 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { z } from "zod";
 
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { ReviewSessionService } from "@/lib/services/review-session.service";
 import { CompleteReviewSessionSchema } from "@/lib/validation/review-session.schema";
 import { handleError } from "@/lib/utils/error-handler";
+import { getAuthContext, unauthorizedResponse } from "@/lib/utils/auth-context";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json",
@@ -17,8 +17,9 @@ const ParamsSchema = z.object({
 });
 
 export const POST: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   const paramsResult = ParamsSchema.safeParse(context.params);
 
@@ -91,7 +92,3 @@ export const POST: APIRoute = async (context) => {
     return handleError(error);
   }
 };
-
-
-
-

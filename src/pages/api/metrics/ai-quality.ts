@@ -1,18 +1,19 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { MetricsService } from "@/lib/services/metrics.service";
 import { AiQualityMetricsQuerySchema } from "@/lib/validation/metrics.schema";
 import { handleError } from "@/lib/utils/error-handler";
+import { getAuthContext, unauthorizedResponse } from "@/lib/utils/auth-context";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json",
 };
 
 export const GET: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   const url = new URL(context.request.url);
   const query = Object.fromEntries(url.searchParams.entries());
@@ -47,6 +48,3 @@ export const GET: APIRoute = async (context) => {
     return handleError(error);
   }
 };
-
-
-

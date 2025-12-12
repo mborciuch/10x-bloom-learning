@@ -1,18 +1,19 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { StudyPlanService } from "@/lib/services/study-plan.service";
 import { CreateStudyPlanSchema, StudyPlanListQuerySchema } from "@/lib/validation/study-plan.schema";
 import { handleError } from "@/lib/utils/error-handler";
+import { getAuthContext, unauthorizedResponse } from "@/lib/utils/auth-context";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json",
 };
 
 export const GET: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   const url = new URL(context.request.url);
   const rawQuery = Object.fromEntries(url.searchParams.entries());
@@ -48,8 +49,9 @@ export const GET: APIRoute = async (context) => {
 };
 
 export const POST: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   let body: unknown;
   try {

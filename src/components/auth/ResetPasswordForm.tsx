@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Info, Loader2, Mail } from "lucide-react";
@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validation/auth.schema";
 
-const WAIT_TIME_MS = 900;
-
 export function ResetPasswordForm() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     mode: "onChange",
@@ -24,16 +23,35 @@ export function ResetPasswordForm() {
   const isSubmitting = form.formState.isSubmitting;
   const isSubmitDisabled = !form.formState.isValid || isSubmitting;
 
-  const emailInputRef = useRef<HTMLInputElement | null>(null);
-
   useEffect(() => {
-    emailInputRef.current?.focus();
-  }, []);
+    form.setFocus("email");
+  }, [form]);
 
-  const handleSubmitForm = async () => {
+  const handleSubmitForm = async (values: ResetPasswordFormValues) => {
     setStatusMessage(null);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME_MS));
-    setStatusMessage("Jeśli adres istnieje w systemie, wyślemy instrukcję resetu hasła.");
+    setFormError(null);
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { message?: string } | null;
+        setFormError(data?.message ?? "Nie udało się wysłać wiadomości. Spróbuj ponownie.");
+        return;
+      }
+
+      const { message } = (await response.json()) as { message?: string };
+      setStatusMessage(message ?? "Jeśli adres istnieje w systemie, wyślemy instrukcję resetu hasła.");
+      form.reset({ email: "" });
+      form.setFocus("email");
+    } catch {
+      setFormError("Wystąpił problem z połączeniem. Spróbuj ponownie.");
+    }
   };
 
   return (
@@ -69,13 +87,7 @@ export function ResetPasswordForm() {
                 <FormLabel>Adres email</FormLabel>
                 <FormDescription>Użyj adresu, którego używasz do logowania</FormDescription>
                 <FormControl>
-                  <Input
-                    ref={emailInputRef}
-                    {...field}
-                    type="email"
-                    autoComplete="email"
-                    placeholder="natalia@bloomlearning.com"
-                  />
+                  <Input {...field} type="email" autoComplete="email" placeholder="natalia@bloomlearning.com" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,6 +107,13 @@ export function ResetPasswordForm() {
         </form>
       </Form>
 
+      {formError && (
+        <Alert variant="destructive">
+          <AlertTitle>Nie udało się wysłać wiadomości</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <a
           href="/login"
@@ -109,6 +128,8 @@ export function ResetPasswordForm() {
 
       <p className="sr-only" aria-live="polite">
         {isSubmitting ? "Trwa wysyłanie formularza resetu hasła" : "Formularz gotowy do wysłania"}
+        {formError ? `Błąd: ${formError}` : null}
+        {statusMessage ? `Sukces: ${statusMessage}` : null}
       </p>
     </div>
   );

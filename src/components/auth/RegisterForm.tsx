@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { registerSchema, type RegisterFormValues } from "@/lib/validation/auth.schema";
 import { cn } from "@/lib/utils";
-
-const WAIT_TIME_MS = 1200;
 
 interface StrengthMeta {
   level: number;
@@ -71,7 +69,7 @@ const evaluatePasswordStrength = (password: string): StrengthMeta => {
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -92,10 +90,40 @@ export function RegisterForm() {
     emailInputRef.current?.focus();
   }, []);
 
-  const handleSubmitForm = async () => {
-    setStatusMessage(null);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME_MS));
-    setStatusMessage("Konto zostanie utworzone po podłączeniu Supabase Auth.");
+  const getReturnUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("returnUrl");
+    if (value && value.startsWith("/") && !value.startsWith("//")) {
+      return value;
+    }
+    return null;
+  };
+
+  const handleSubmitForm = async (values: RegisterFormValues) => {
+    setFormError(null);
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...values,
+          returnUrl: getReturnUrl(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { message?: string } | null;
+        setFormError(data?.message ?? "Nie udało się utworzyć konta. Spróbuj ponownie.");
+        return;
+      }
+
+      const { redirectTo } = (await response.json()) as { redirectTo?: string };
+      window.location.assign(redirectTo ?? "/app/calendar");
+    } catch {
+      setFormError("Wystąpił problem z połączeniem. Spróbuj ponownie.");
+    }
   };
 
   const isSubmitting = form.formState.isSubmitting;
@@ -108,21 +136,10 @@ export function RegisterForm() {
         <div>
           <AlertTitle>Załóż konto w kilku krokach</AlertTitle>
           <AlertDescription>
-            Formularz jest w pełni funkcjonalny po stronie UI. Po spięciu z backendem włączymy tworzenie konta oraz
-            maile potwierdzające.
+            Wypełnij pola poniżej i rozpocznij pracę z inteligentnym kalendarzem Bloom Learning.
           </AlertDescription>
         </div>
       </Alert>
-
-      {statusMessage && (
-        <Alert variant="success">
-          <CheckCircle2 aria-hidden className="size-4" />
-          <div>
-            <AlertTitle>Symulacja zakończona</AlertTitle>
-            <AlertDescription>{statusMessage}</AlertDescription>
-          </div>
-        </Alert>
-      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6">
@@ -288,6 +305,13 @@ export function RegisterForm() {
         </form>
       </Form>
 
+      {formError && (
+        <Alert variant="destructive">
+          <AlertTitle>Nie udało się założyć konta</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+
       <p className="text-center text-sm text-muted-foreground">
         Masz już konto?{" "}
         <a
@@ -300,6 +324,7 @@ export function RegisterForm() {
 
       <p className="sr-only" role="status" aria-live="polite">
         {isSubmitting ? "Trwa wysyłanie formularza rejestracji" : "Formularz gotowy do wysłania"}
+        {formError ? `Błąd: ${formError}` : null}
       </p>
     </div>
   );

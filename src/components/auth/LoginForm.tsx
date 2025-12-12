@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Eye, EyeOff, Info, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Info, Loader2 } from "lucide-react";
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { loginSchema, type LoginFormValues } from "@/lib/validation/auth.schema";
 
-const WAIT_TIME_MS = 900;
-
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -32,10 +30,41 @@ export function LoginForm() {
     emailInputRef.current?.focus();
   }, []);
 
-  const handleSubmitForm = async () => {
-    setStatusMessage(null);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME_MS));
-    setStatusMessage("UI gotowe. Podłączymy Supabase Auth w kolejnej iteracji.");
+  const getReturnUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("returnUrl");
+    if (value && value.startsWith("/") && !value.startsWith("//")) {
+      return value;
+    }
+    return null;
+  };
+
+  const handleSubmitForm = async (values: LoginFormValues) => {
+    setFormError(null);
+    try {
+      const response = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+          rememberMe: values.rememberMe,
+          returnUrl: getReturnUrl(),
+        }),
+      });
+
+      if (!response.ok) {
+        setFormError("Nieprawidłowe dane logowania");
+        return;
+      }
+
+      const { redirectTo } = (await response.json()) as { redirectTo?: string };
+      window.location.assign(redirectTo ?? "/app/calendar");
+    } catch {
+      setFormError("Wystąpił problem z połączeniem. Spróbuj ponownie.");
+    }
   };
 
   const isSubmitting = form.formState.isSubmitting;
@@ -46,23 +75,10 @@ export function LoginForm() {
       <Alert variant="info">
         <Info aria-hidden className="size-4" />
         <div>
-          <AlertTitle>Warstwa interfejsu</AlertTitle>
-          <AlertDescription>
-            Ten formularz skupia się na doświadczeniu użytkownika. Logika Supabase zostanie dodana w następnym kroku
-            implementacji.
-          </AlertDescription>
+          <AlertTitle>Zaloguj się</AlertTitle>
+          <AlertDescription>Użyj danych konta Bloom Learning, aby przejść do kalendarza nauki.</AlertDescription>
         </div>
       </Alert>
-
-      {statusMessage && (
-        <Alert variant="success">
-          <CheckCircle2 aria-hidden className="size-4" />
-          <div>
-            <AlertTitle>Symulacja zakończona</AlertTitle>
-            <AlertDescription>{statusMessage}</AlertDescription>
-          </div>
-        </Alert>
-      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6">
@@ -167,6 +183,13 @@ export function LoginForm() {
         </form>
       </Form>
 
+      {formError && (
+        <Alert variant="destructive">
+          <AlertTitle>Nie udało się zalogować</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+
       <p className="text-center text-sm text-muted-foreground">
         Nie masz konta?{" "}
         <a
@@ -179,6 +202,7 @@ export function LoginForm() {
 
       <p className="sr-only" role="status" aria-live="polite">
         {isSubmitting ? "Trwa wysyłanie formularza logowania" : "Formularz gotowy do wysłania"}
+        {formError ? `Błąd: ${formError}` : null}
       </p>
     </div>
   );

@@ -1,10 +1,10 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { DEFAULT_USER_ID } from "@/db/supabase.client";
 import { ReviewSessionService } from "@/lib/services/review-session.service";
 import { CreateReviewSessionSchema, ReviewSessionListQuerySchema } from "@/lib/validation/review-session.schema";
 import { handleError } from "@/lib/utils/error-handler";
+import { getAuthContext, unauthorizedResponse } from "@/lib/utils/auth-context";
 import type { Paginated, ReviewSessionDto } from "@/types";
 
 const JSON_HEADERS = {
@@ -32,8 +32,9 @@ const JSON_HEADERS = {
  * - Paginated<ReviewSessionDto>
  */
 export const GET: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   const url = new URL(context.request.url);
   const rawQuery = Object.fromEntries(url.searchParams.entries());
@@ -78,8 +79,9 @@ function buildPaginationHeaders(result: Paginated<ReviewSessionDto>) {
 }
 
 export const POST: APIRoute = async (context) => {
-  const supabase = context.locals.supabase;
-  const userId = DEFAULT_USER_ID;
+  const auth = getAuthContext(context.locals);
+  if (!auth) return unauthorizedResponse();
+  const { supabase, userId } = auth;
 
   let payload: unknown;
   try {
