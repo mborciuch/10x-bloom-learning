@@ -9,6 +9,19 @@ A modern, opinionated starter template for building fast, accessible, and AI-fri
 - [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
 - [Tailwind CSS](https://tailwindcss.com/) v4.0.17 - Utility-first CSS framework
 
+## Testing Stack
+
+### Unit / Integration (TypeScript)
+
+- [Vitest](https://vitest.dev/) - test runner for TypeScript/JS
+- [Testing Library](https://testing-library.com/) - component and DOM-focused testing
+- [MSW](https://mswjs.io/) - network mocking for frontend hooks/API clients (optional)
+
+### E2E (Browser)
+
+- [Playwright](https://playwright.dev/) - end-to-end tests (UI + API via request context)
+- [axe-core](https://github.com/dequelabs/axe-core) - accessibility checks (optional, recommended)
+
 ## Prerequisites
 
 - Node.js v22.14.0 (as specified in `.nvmrc`)
