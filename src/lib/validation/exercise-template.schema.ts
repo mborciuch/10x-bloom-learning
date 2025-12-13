@@ -47,3 +47,4 @@ export type ExerciseTemplateListQueryInput = z.infer<typeof ExerciseTemplateList
 
 
 
+
