@@ -27,6 +27,6 @@ export function useStudyPlans() {
       return data.items;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
+    retry: import.meta.env?.MODE === "test" ? 0 : 3,
   });
 }

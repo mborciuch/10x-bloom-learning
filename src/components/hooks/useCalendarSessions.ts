@@ -75,6 +75,6 @@ export function useCalendarSessions(
     },
     staleTime: 1 * 60 * 1000, // 1 minute
     refetchOnWindowFocus: true,
-    retry: 3,
+    retry: import.meta.env?.MODE === "test" ? 0 : 3,
   });
 }

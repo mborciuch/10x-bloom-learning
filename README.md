@@ -61,6 +61,31 @@ npm run build
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
+- `npm run format` - Format files with Prettier
+- `npm run test` - Run Vitest in CI mode once
+- `npm run test:watch` - Watch files with Vitest for rapid feedback
+- `npm run test:ui` - Inspect suites in the Vitest UI
+- `npm run test:coverage` - Generate V8 coverage reports (`coverage/unit`)
+- `npm run test:e2e` - Execute Playwright Chromium suite
+- `npm run test:e2e:ui` - Explore tests via Playwright UI
+- `npm run test:e2e:debug` - Launch headed Chromium for step-by-step debugging
+- `npm run test:e2e:codegen` - Use Playwright codegen to bootstrap new specs
+
+## Testing Workflow
+
+### Unit & integration (Vitest)
+
+- `vitest.config.ts` runs against jsdom, loads global matchers via `src/tests/setup.ts`, and enforces V8 coverage thresholds (75/70/65/75).
+- Prefer the `vi` helpers for doubles (`vi.fn`, `vi.spyOn`, `vi.mock`) and keep shared mocks in the setup file when multiple suites reuse them.
+- Inline snapshots are supported out-of-the-box; run `npm run test:watch -t "<name>"` for instant feedback while editing a single case.
+- Type checking for specs relies on `tsconfig.vitest.json`, so TypeScript catches unsupported globals before execution.
+
+### E2E (Playwright)
+
+- `playwright.config.ts` defines a single Chromium/Desktop Chrome project, records traces/videos on failure, and can auto-start `npm run dev` unless `PLAYWRIGHT_SKIP_WEBSERVER=1`.
+- Page Object Model lives under `tests/e2e/page-objects/`; reuse these classes to keep selectors resilient and interactions isolated.
+- Use `npm run test:e2e:ui` or `npm run test:e2e:debug` when you need the inspector/trace viewer, and `npm run test:e2e:codegen` to scaffold new flows.
+- Visual assertions (`expect(page).toHaveScreenshot()`) are ready to use—commit golden images under `tests/e2e/__screenshots__` when you add them.
 
 ## Project Structure
 

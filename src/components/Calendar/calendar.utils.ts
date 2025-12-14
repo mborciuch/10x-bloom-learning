@@ -9,7 +9,8 @@ import {
   format,
   subMonths,
   addMonths,
-  differenceInYears,
+  addYears,
+  subYears,
 } from "date-fns";
 import type { CalendarDay, SessionsByDate } from "./calendar.types";
 import type { ReviewSessionDto } from "@/types";
@@ -56,7 +57,8 @@ export function generateCalendarDays(currentMonth: Date, sessionsByDate: Session
  */
 export function groupSessionsByDate(sessions: ReviewSessionDto[]): SessionsByDate {
   return sessions.reduce<SessionsByDate>((acc, session) => {
-    const dateKey = format(new Date(session.reviewDate), "yyyy-MM-dd");
+    const dateValue = new Date(session.reviewDate);
+    const dateKey = dateValue.toISOString().slice(0, 10); // UTC-normalized to avoid TZ drift
 
     if (!acc[dateKey]) {
       acc[dateKey] = [];
@@ -95,9 +97,10 @@ export function getCalendarDateRange(currentMonth: Date): { startDate: string; e
 export function canNavigateMonth(currentMonth: Date, direction: "prev" | "next"): boolean {
   const today = new Date();
   const targetMonth = direction === "prev" ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
-  const yearsDiff = differenceInYears(targetMonth, today);
+  const minDate = subYears(today, 5);
+  const maxDate = addYears(today, 5);
 
-  return Math.abs(yearsDiff) <= 5;
+  return targetMonth >= minDate && targetMonth <= maxDate;
 }
 
 /**

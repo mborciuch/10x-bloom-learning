@@ -20,3 +20,4 @@ export function mapToExerciseTemplateDto(row: ExerciseTemplateRow): ExerciseTemp
 
 
 
+
