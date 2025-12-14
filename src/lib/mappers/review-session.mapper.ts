@@ -64,12 +64,7 @@ function safeJsonParse(content: string, sessionId: string) {
   try {
     return JSON.parse(content);
   } catch (error) {
-    throw new ApiError(
-      "DATA_INTEGRITY_ERROR",
-      `Invalid JSON content for review session ${sessionId}`,
-      500,
-      error
-    );
+    throw new ApiError("DATA_INTEGRITY_ERROR", `Invalid JSON content for review session ${sessionId}`, 500, error);
   }
 }
 

@@ -85,4 +85,3 @@ describe("useStudyPlans", () => {
     expect(result.current.error?.message).toBe("Failed to fetch study plans");
   });
 });
-

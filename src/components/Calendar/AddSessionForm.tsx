@@ -221,11 +221,7 @@ export function AddSessionForm({
             <FormItem className="space-y-3">
               <FormLabel>Exercise Type</FormLabel>
               <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex flex-col space-y-1"
-                >
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col space-y-1">
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="custom" />
@@ -278,9 +274,7 @@ export function AddSessionForm({
                 </Select>
                 <FormDescription>
                   Choose from predefined exercise templates.
-                  {templatesLoadError && (
-                    <span className="block text-destructive">{templatesLoadError}</span>
-                  )}
+                  {templatesLoadError && <span className="block text-destructive">{templatesLoadError}</span>}
                 </FormDescription>
                 <FormMessage />
               </FormItem>

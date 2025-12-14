@@ -18,10 +18,3 @@ export function useStudyPlanDetails(planId?: string) {
     staleTime: 2 * 60 * 1000,
   });
 }
-
-
-
-
-
-
-

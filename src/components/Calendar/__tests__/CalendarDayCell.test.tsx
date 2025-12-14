@@ -74,4 +74,3 @@ describe("CalendarDayCell", () => {
     expect(screen.getByRole("gridcell")).toHaveAttribute("aria-current", "date");
   });
 });
-

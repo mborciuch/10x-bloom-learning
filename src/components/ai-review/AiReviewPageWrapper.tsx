@@ -12,10 +12,3 @@ export function AiReviewPageWrapper({ planId }: AiReviewPageWrapperProps) {
     </QueryProvider>
   );
 }
-
-
-
-
-
-
-

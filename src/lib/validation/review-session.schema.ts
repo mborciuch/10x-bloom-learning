@@ -25,17 +25,12 @@ export const ReviewSessionContentSchema = z
     answers: z
       .array(nonEmptyTrimmedString.max(500, "Answer cannot exceed 500 characters"))
       .min(1, "At least one answer is required"),
-    hints: z
-      .array(nonEmptyTrimmedString.max(500, "Hint cannot exceed 500 characters"))
-      .optional(),
+    hints: z.array(nonEmptyTrimmedString.max(500, "Hint cannot exceed 500 characters")).optional(),
   })
-  .refine(
-    (data) => data.questions.length === data.answers.length,
-    {
-      path: ["answers"],
-      message: "questions and answers arrays must contain the same number of items",
-    }
-  )
+  .refine((data) => data.questions.length === data.answers.length, {
+    path: ["answers"],
+    message: "questions and answers arrays must contain the same number of items",
+  })
   .refine(
     (data) => {
       if (!data.hints || data.hints.length === 0) {
@@ -146,11 +141,7 @@ export const CreateReviewSessionSchema = z
     reviewDate: dateStringSchema,
     taxonomyLevel: z.enum(taxonomyLevelValues),
     content: ReviewSessionContentSchema,
-    notes: z
-      .string()
-      .trim()
-      .max(2000, "notes cannot exceed 2000 characters")
-      .optional(),
+    notes: z.string().trim().max(2000, "notes cannot exceed 2000 characters").optional(),
   })
   .strict();
 
@@ -169,20 +160,13 @@ export const UpdateReviewSessionSchema = z
     taxonomyLevel: z.enum(taxonomyLevelValues).optional(),
     status: z.enum(reviewStatusValues).optional(),
     content: ReviewSessionContentSchema.optional(),
-    notes: z
-      .string()
-      .trim()
-      .max(2000, "notes cannot exceed 2000 characters")
-      .optional(),
+    notes: z.string().trim().max(2000, "notes cannot exceed 2000 characters").optional(),
   })
   .strict()
-  .refine(
-    (value) => Object.keys(value).length > 0,
-    {
-      message: "At least one field must be provided for update",
-      path: [],
-    }
-  );
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field must be provided for update",
+    path: [],
+  });
 
 export type UpdateReviewSessionSchemaInput = z.infer<typeof UpdateReviewSessionSchema>;
 

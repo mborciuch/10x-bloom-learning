@@ -24,5 +24,3 @@ export class CalendarPage {
     await this.emptyStateCreateButton.click();
   }
 }
-
-

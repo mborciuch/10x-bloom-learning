@@ -19,5 +19,3 @@ export function getE2EUser(): E2EUserConfig {
     password: readEnv("E2E_PASSWORD"),
   };
 }
-
-

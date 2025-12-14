@@ -54,10 +54,3 @@ export const GET: APIRoute = async (context) => {
     return handleError(error);
   }
 };
-
-
-
-
-
-
-

@@ -48,6 +48,3 @@ export interface FooterProps {
   links: FooterLink[];
   copyrightLabel: string;
 }
-
-
-

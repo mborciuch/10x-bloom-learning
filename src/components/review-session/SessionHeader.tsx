@@ -118,6 +118,3 @@ export function SessionHeader({ session, studyPlanTitle, onComplete, isCompletin
     </header>
   );
 }
-
-
-

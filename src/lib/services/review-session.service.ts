@@ -83,11 +83,7 @@ function parseReviewSessionMetadata(raw: unknown): ReviewSessionMetadata {
  * Step 1: Complex query builder with advanced filters (see implementation plan).
  * Extracted into a helper to keep the list method focused on pagination/output.
  */
-function buildReviewSessionListQuery(
-  supabase: SupabaseClient,
-  userId: string,
-  filters: ReviewSessionListFilters
-) {
+function buildReviewSessionListQuery(supabase: SupabaseClient, userId: string, filters: ReviewSessionListFilters) {
   let query = supabase.from("review_sessions").select("*", { count: "exact" }).eq("user_id", userId);
 
   if (filters.studyPlanId) {
@@ -152,7 +148,9 @@ export class ReviewSessionService {
     const preconditions = await this.assertManualCreatePreconditions(userId, command);
 
     const hasCustomLabel = command.exerciseLabel.trim().length > 0;
-    const exerciseLabel = hasCustomLabel ? command.exerciseLabel : preconditions.exerciseTemplate?.name ?? "Manual review session";
+    const exerciseLabel = hasCustomLabel
+      ? command.exerciseLabel
+      : (preconditions.exerciseTemplate?.name ?? "Manual review session");
 
     const contentPayload = JSON.stringify(command.content);
     const timestamp = new Date().toISOString();
@@ -289,18 +287,16 @@ export class ReviewSessionService {
     return mapToReviewSessionDto(data as ReviewSessionRow);
   }
 
-  async complete(
-    userId: string,
-    sessionId: string,
-    command: CompleteReviewSessionCommand
-  ): Promise<ReviewSessionDto> {
+  async complete(userId: string, sessionId: string, command: CompleteReviewSessionCommand): Promise<ReviewSessionDto> {
     const existing = await this.getById(userId, sessionId);
 
     if (existing.isCompleted) {
       throw new ApiError("SESSION_ALREADY_COMPLETED", "Review session is already completed", 409);
     }
 
-    const completionTimestamp = command.completedAt ? new Date(command.completedAt).toISOString() : new Date().toISOString();
+    const completionTimestamp = command.completedAt
+      ? new Date(command.completedAt).toISOString()
+      : new Date().toISOString();
 
     const { data, error } = await this.supabase
       .from("review_sessions")
@@ -328,11 +324,7 @@ export class ReviewSessionService {
     const session = await this.getById(userId, sessionId);
 
     if (!session.isCompleted) {
-      throw new ApiError(
-        "SESSION_NOT_COMPLETED",
-        "Review session must be completed before submitting feedback",
-        409
-      );
+      throw new ApiError("SESSION_NOT_COMPLETED", "Review session must be completed before submitting feedback", 409);
     }
 
     const { data: existing, error: existingError } = await this.supabase
@@ -347,11 +339,7 @@ export class ReviewSessionService {
     }
 
     if (existing) {
-      throw new ApiError(
-        "FEEDBACK_ALREADY_SUBMITTED",
-        "You have already submitted feedback for this session",
-        409
-      );
+      throw new ApiError("FEEDBACK_ALREADY_SUBMITTED", "You have already submitted feedback for this session", 409);
     }
 
     const trimmedComment = command.comment?.trim();
@@ -394,10 +382,7 @@ export class ReviewSessionService {
     return data as ReviewSessionRow;
   }
 
-  private shouldMarkSessionEdited(
-    existing: ReviewSessionRow,
-    command: UpdateReviewSessionCommand
-  ): boolean {
+  private shouldMarkSessionEdited(existing: ReviewSessionRow, command: UpdateReviewSessionCommand): boolean {
     if (!existing.is_ai_generated) {
       return false;
     }

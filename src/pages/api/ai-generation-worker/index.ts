@@ -11,15 +11,15 @@ import type { APIRoute } from "astro";
  * POST /api/study-plans/{planId}/ai-generate.
  */
 export const POST: APIRoute = async () => {
-    return new Response(
-      JSON.stringify({
+  return new Response(
+    JSON.stringify({
       error: {
         code: "GONE",
         message:
           "This worker endpoint is deprecated. AI generation is now synchronous via POST /api/study-plans/{planId}/ai-generate.",
       },
-      }),
-      {
+    }),
+    {
       status: 410,
       headers: {
         "Content-Type": "application/json",

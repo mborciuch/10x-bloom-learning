@@ -20,8 +20,7 @@ const steps: LearningStep[] = [
     id: "step-calendar",
     stepNumber: 3,
     title: "Ucz się z kalendarzem",
-    description:
-      "Realizujesz sesje z kalendarza, oznaczasz je jako ukończone i na bieżąco widzisz postępy w nauce.",
+    description: "Realizujesz sesje z kalendarza, oznaczasz je jako ukończone i na bieżąco widzisz postępy w nauce.",
   },
 ];
 ---
@@ -32,47 +31,34 @@ const steps: LearningStep[] = [
   class="mt-12 border-t border-border/60 pt-10 sm:mt-16 sm:pt-14"
 >
   <div class="space-y-4">
-    <h2
-      id="how-heading"
-      class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
-    >
+    <h2 id="how-heading" class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
       Jak działa Bloom Learning?
     </h2>
     <p class="max-w-2xl text-sm text-muted-foreground sm:text-base">
-      Cały proces zamyka się w trzech krokach – od zdefiniowania planu, przez generowanie sesji z AI, aż po pracę
-      z kalendarzem powtórek.
+      Cały proces zamyka się w trzech krokach – od zdefiniowania planu, przez generowanie sesji z AI, aż po pracę z
+      kalendarzem powtórek.
     </p>
   </div>
 
-  <ol
-    class="mt-8 grid gap-6 sm:mt-10 sm:grid-cols-3"
-  >
-    {steps.map((step) => (
-      <li class="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs">
-        <div class="inline-flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-          {step.stepNumber}
-        </div>
-        <div class="space-y-1">
-          <h3 class="text-sm font-semibold tracking-tight">
-            {step.title}
-          </h3>
-          <p class="text-xs text-muted-foreground sm:text-sm">
-            {step.description}
-          </p>
-        </div>
-      </li>
-    ))}
+  <ol class="mt-8 grid gap-6 sm:mt-10 sm:grid-cols-3">
+    {
+      steps.map((step) => (
+        <li class="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs">
+          <div class="inline-flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {step.stepNumber}
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-sm font-semibold tracking-tight">{step.title}</h3>
+            <p class="text-xs text-muted-foreground sm:text-sm">{step.description}</p>
+          </div>
+        </li>
+      ))
+    }
   </ol>
 
   <div class="mt-6">
-    <a
-      href="/register"
-      class="text-sm font-medium text-primary hover:text-primary/90 hover:underline"
-    >
+    <a href="/register" class="text-sm font-medium text-primary hover:text-primary/90 hover:underline">
       Rozpocznij teraz – załóż darmowe konto
     </a>
   </div>
 </section>
-
-
-

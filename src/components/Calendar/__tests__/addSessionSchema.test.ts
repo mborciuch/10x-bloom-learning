@@ -81,4 +81,3 @@ describe("addSessionSchema", () => {
     expect(hasIssueOnPath(mismatchedAnswers, "answersText")).toBe(true);
   });
 });
-

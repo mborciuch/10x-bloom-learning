@@ -40,9 +40,7 @@ export class ExerciseTemplateService {
       }
     }
 
-    const { data, count, error } = await query
-      .order("name", { ascending: true })
-      .range(from, to);
+    const { data, count, error } = await query.order("name", { ascending: true }).range(from, to);
 
     if (error) {
       throw error;
@@ -65,4 +63,3 @@ function escapeForILike(value: string): string {
     .replace(/[(),]/g, " ")
     .trim();
 }
-

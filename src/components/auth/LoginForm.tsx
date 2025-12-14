@@ -81,11 +81,7 @@ export function LoginForm() {
       </Alert>
 
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handleSubmitForm)}
-          className="space-y-6"
-          data-test-id="login-form"
-        >
+        <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6" data-test-id="login-form">
           <FormField
             control={form.control}
             name="email"
@@ -179,12 +175,7 @@ export function LoginForm() {
             </a>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isSubmitDisabled}
-            data-test-id="login-submit-button"
-          >
+          <Button type="submit" className="w-full" disabled={isSubmitDisabled} data-test-id="login-submit-button">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />

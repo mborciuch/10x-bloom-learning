@@ -10,8 +10,8 @@ const taxonomyLevelValues = ["remember", "understand", "apply", "analyze", "eval
  */
 export const ExerciseTemplateListQuerySchema = z
   .object({
-    isActive: z
-      .coerce.boolean({ invalid_type_error: "isActive must be a boolean" })
+    isActive: z.coerce
+      .boolean({ invalid_type_error: "isActive must be a boolean" })
       .optional()
       .default(true)
       .describe("Filter templates by activation flag (default: true)"),
@@ -43,10 +43,3 @@ export const ExerciseTemplateListQuerySchema = z
   .strict();
 
 export type ExerciseTemplateListQueryInput = z.infer<typeof ExerciseTemplateListQuerySchema>;
-
-
-
-
-
-
-

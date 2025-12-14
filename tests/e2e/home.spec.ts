@@ -19,6 +19,3 @@ test.describe("Landing page experience", () => {
     await expect(page.getByRole("heading", { name: /Rozpocznij naukę z Bloom Learning/i })).toBeVisible();
   });
 });
-
-
-

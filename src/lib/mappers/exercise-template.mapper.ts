@@ -15,10 +15,3 @@ export function mapToExerciseTemplateDto(row: ExerciseTemplateRow): ExerciseTemp
     updatedAt: row.updated_at,
   };
 }
-
-
-
-
-
-
-

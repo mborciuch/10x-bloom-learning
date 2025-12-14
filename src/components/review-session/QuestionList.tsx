@@ -46,4 +46,3 @@ export function QuestionList({ session }: QuestionListProps) {
     </section>
   );
 }
-

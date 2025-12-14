@@ -30,10 +30,7 @@ const heroContent: HeroContent = {
       <p class="inline-flex items-center rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
         Kalendarz jako centrum nauki
       </p>
-      <h1
-        id="hero-heading"
-        class="text-balance text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl"
-      >
+      <h1 id="hero-heading" class="text-balance text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
         {heroContent.title}
       </h1>
       <p class="text-balance text-sm text-muted-foreground sm:text-base">
@@ -52,29 +49,23 @@ const heroContent: HeroContent = {
         </a>
       </Button>
 
-      {heroContent.secondaryCta && (
-        <Button
-          client:load
-          asChild
-          size="lg"
-          variant="outline"
-        >
-          <a
-            href={heroContent.secondaryCta.href}
-            aria-label={heroContent.secondaryCta.ariaLabel}
-            data-test-id="hero-login-cta"
-          >
-            {heroContent.secondaryCta.label}
-          </a>
-        </Button>
-      )}
+      {
+        heroContent.secondaryCta && (
+          <Button client:load asChild size="lg" variant="outline">
+            <a
+              href={heroContent.secondaryCta.href}
+              aria-label={heroContent.secondaryCta.ariaLabel}
+              data-test-id="hero-login-cta"
+            >
+              {heroContent.secondaryCta.label}
+            </a>
+          </Button>
+        )
+      }
     </div>
 
     <div class="text-xs text-muted-foreground sm:text-sm">
-      <a
-        href="#how-it-works"
-        class="font-medium text-primary hover:text-primary/90 hover:underline"
-      >
+      <a href="#how-it-works" class="font-medium text-primary hover:text-primary/90 hover:underline">
         Zobacz jak działa Bloom Learning
       </a>
     </div>
@@ -91,15 +82,14 @@ const heroContent: HeroContent = {
       class="relative ml-auto aspect-[4/3] max-w-md overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-primary/5 via-background to-secondary/5 shadow-lg"
       aria-hidden="true"
     >
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(129,140,248,0.18),_transparent_55%)]" />
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(129,140,248,0.18),_transparent_55%)]"
+      >
+      </div>
       <div class="relative flex h-full flex-col justify-between p-5">
         <div class="space-y-2">
-          <p class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Przykładowy plan nauki
-          </p>
-          <p class="text-sm font-semibold text-foreground">
-            Egzamin z anatomii – 14 tygodni powtórek
-          </p>
+          <p class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Przykładowy plan nauki</p>
+          <p class="text-sm font-semibold text-foreground">Egzamin z anatomii – 14 tygodni powtórek</p>
         </div>
         <div class="space-y-2 rounded-xl bg-background/80 p-3 text-xs shadow-sm ring-1 ring-border/70">
           <div class="flex items-center justify-between">
@@ -108,9 +98,7 @@ const heroContent: HeroContent = {
               AI wygenerowana
             </span>
           </div>
-          <p class="text-muted-foreground">
-            20 pytań na poziomie zastosowania (Apply) i analizy (Analyze).
-          </p>
+          <p class="text-muted-foreground">20 pytań na poziomie zastosowania (Apply) i analizy (Analyze).</p>
           <div class="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>Start: 18:00</span>
             <span>Szacowany czas: 25 min</span>
@@ -120,5 +108,3 @@ const heroContent: HeroContent = {
     </div>
   </div>
 </section>
-
-

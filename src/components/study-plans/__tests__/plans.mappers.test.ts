@@ -42,5 +42,3 @@ describe("plans.mappers", () => {
     expect(viewModels.map((vm) => vm.id)).toEqual(["a", "b", "c"]);
   });
 });
-
-

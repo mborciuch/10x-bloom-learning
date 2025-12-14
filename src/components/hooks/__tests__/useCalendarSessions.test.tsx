@@ -70,10 +70,9 @@ describe("useCalendarSessions", () => {
     });
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const { result } = renderHook(
-      () => useCalendarSessions({ startDate: "2024-01-01", endDate: "2024-01-02" }, null),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useCalendarSessions({ startDate: "2024-01-01", endDate: "2024-01-02" }, null), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toBe("UNAUTHORIZED");
@@ -87,13 +86,11 @@ describe("useCalendarSessions", () => {
     });
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const { result } = renderHook(
-      () => useCalendarSessions({ startDate: "2024-01-01", endDate: "2024-01-02" }, null),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useCalendarSessions({ startDate: "2024-01-01", endDate: "2024-01-02" }, null), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toBe("Rate limit");
   });
 });
-

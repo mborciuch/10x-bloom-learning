@@ -18,4 +18,3 @@ export function mapToReviewSessionFeedbackDto(row: ReviewSessionFeedbackRow): Re
     createdAt: row.created_at,
   };
 }
-

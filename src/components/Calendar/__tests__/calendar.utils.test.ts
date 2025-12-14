@@ -1,11 +1,6 @@
 import { addMonths, addYears, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { vi } from "vitest";
-import {
-  canNavigateMonth,
-  generateCalendarDays,
-  getCalendarDateRange,
-  groupSessionsByDate,
-} from "../calendar.utils";
+import { canNavigateMonth, generateCalendarDays, getCalendarDateRange, groupSessionsByDate } from "../calendar.utils";
 import type { ReviewSessionDto } from "@/types";
 import type { SessionsByDate } from "../calendar.types";
 
@@ -139,4 +134,3 @@ describe("calendar.utils", () => {
     });
   });
 });
-

@@ -22,13 +22,7 @@ function getErrorMessage(error: unknown): string {
  * Top-level component for the review session focus mode page.
  */
 export function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
-  const {
-    data: session,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useReviewSession(sessionId);
+  const { data: session, isLoading, isError, error, refetch } = useReviewSession(sessionId);
 
   const studyPlanId = session?.studyPlanId;
   const { data: studyPlan } = useStudyPlanDetails(studyPlanId);
@@ -71,5 +65,3 @@ export function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
     </div>
   );
 }
-
-

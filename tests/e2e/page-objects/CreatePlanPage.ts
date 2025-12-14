@@ -44,6 +44,3 @@ export class CreatePlanPage {
     await this.cancelButton.click();
   }
 }
-
-
-

@@ -16,12 +16,7 @@ interface AiReviewPageProps {
 }
 
 export function AiReviewPage({ planId }: AiReviewPageProps) {
-  const {
-    data: plan,
-    isLoading: isPlanLoading,
-    error: planError,
-    refetch: refetchPlan,
-  } = useStudyPlanDetails(planId);
+  const { data: plan, isLoading: isPlanLoading, error: planError, refetch: refetchPlan } = useStudyPlanDetails(planId);
   const {
     data: sessionsData,
     isLoading: isSessionsLoading,
@@ -72,7 +67,8 @@ export function AiReviewPage({ planId }: AiReviewPageProps) {
     return map;
   }, [templatesData]);
 
-  const isMutationPending = saveSessionMutation.isPending || statusUpdateMutation.isPending || activeBulkAction !== null;
+  const isMutationPending =
+    saveSessionMutation.isPending || statusUpdateMutation.isPending || activeBulkAction !== null;
 
   const handleSessionStatusChange = useCallback(
     async (sessionId: string, status: ReviewStatus) => {
@@ -229,7 +225,9 @@ export function AiReviewPage({ planId }: AiReviewPageProps) {
                     onReject={handleRejectSession}
                     onSave={handleSaveSession}
                     onDirtyChange={handleDirtyChange}
-                    templateName={session.exerciseTemplateId ? templateNames.get(session.exerciseTemplateId) : undefined}
+                    templateName={
+                      session.exerciseTemplateId ? templateNames.get(session.exerciseTemplateId) : undefined
+                    }
                   />
                 ))}
               </div>
@@ -257,4 +255,3 @@ export function AiReviewPage({ planId }: AiReviewPageProps) {
     </div>
   );
 }
-
