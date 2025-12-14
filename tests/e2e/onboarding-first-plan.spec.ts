@@ -1,9 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { HomePage } from "./page-objects/HomePage";
 import { LoginPage } from "./page-objects/LoginPage";
-import { CalendarPage } from "./page-objects/CalendarPage";
-import { CreatePlanPage } from "./page-objects/CreatePlanPage";
-import { getE2EUser } from "./support/e2eUser";
 
 const emptyPaginatedResponse = {
   items: [],
@@ -14,12 +11,8 @@ const emptyPaginatedResponse = {
 
 test.describe("First plan onboarding flow", () => {
   test("user logs in, sees onboarding, and opens create plan form", async ({ page }) => {
-    const user = getE2EUser();
     const homePage = new HomePage(page);
     const loginPage = new LoginPage(page);
-    const calendarPage = new CalendarPage(page);
-    const createPlanPage = new CreatePlanPage(page);
-
     await page.route("**/api/auth/signin", async (route) => {
       await route.fulfill({
         status: 200,
