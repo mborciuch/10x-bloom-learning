@@ -14,6 +14,9 @@ jobs:
     env:
       ASTRO_TELEMETRY_DISABLED: "1"
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Prepare workspace
         uses: ./.github/actions/setup-node
 
@@ -26,8 +29,12 @@ jobs:
     permissions:
       contents: read
     env:
+      NODE_ENV: test
       ASTRO_TELEMETRY_DISABLED: "1"
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Prepare workspace
         uses: ./.github/actions/setup-node
 
@@ -49,11 +56,15 @@ jobs:
     permissions:
       contents: read
     env:
+      NODE_ENV: integration
       ASTRO_TELEMETRY_DISABLED: "1"
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Prepare workspace
         uses: ./.github/actions/setup-node
 
