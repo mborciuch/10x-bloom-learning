@@ -100,7 +100,7 @@ export function WordCountIndicator({ count, min, max }: WordCountIndicatorProps)
   const progressPercentage = Math.min((count / max) * 100, 100);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-test-id="create-plan-word-count">
       {/* Progress Bar */}
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div

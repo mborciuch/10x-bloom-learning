@@ -35,6 +35,7 @@ export function TitleInput({ value, onChange, error, autoFocus }: TitleInputProp
         aria-describedby={error ? "title-error" : "title-counter"}
         placeholder="Wprowadź tytuł planu nauki..."
         className={cn(error && "border-destructive")}
+        data-test-id="create-plan-title-input"
       />
 
       <div className="flex items-center justify-between gap-2">

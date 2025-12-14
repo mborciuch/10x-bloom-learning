@@ -211,7 +211,7 @@ export function PlanForm({ onSuccess, onCancel }: PlanFormProps) {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" data-test-id="create-plan-form">
         {/* Title Input */}
         <TitleInput
           value={title}

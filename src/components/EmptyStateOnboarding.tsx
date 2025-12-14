@@ -31,7 +31,11 @@ export function EmptyStateOnboarding({ onCreateClick }: EmptyStateOnboardingProp
   }, [onCreateClick]);
 
   return (
-    <section className="flex items-center justify-center min-h-[60vh] p-4" aria-labelledby="empty-state-heading">
+    <section
+      className="flex items-center justify-center min-h-[60vh] p-4"
+      aria-labelledby="empty-state-heading"
+      data-test-id="onboarding-empty-state"
+    >
       <Card className="max-w-md w-full text-center shadow-lg">
         <CardContent className="pt-6">
           {/* Icon */}
@@ -50,7 +54,12 @@ export function EmptyStateOnboarding({ onCreateClick }: EmptyStateOnboardingProp
           </p>
 
           {/* CTA Button */}
-          <Button size="lg" onClick={handleCreatePlan} className="w-full sm:w-auto">
+          <Button
+            size="lg"
+            onClick={handleCreatePlan}
+            className="w-full sm:w-auto"
+            data-test-id="onboarding-create-plan-button"
+          >
             Create Your First Study Plan
             <ArrowRight className="ml-2" size={20} />
           </Button>

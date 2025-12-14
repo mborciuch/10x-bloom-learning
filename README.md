@@ -82,22 +82,34 @@ npm run build
 
 ### E2E (Playwright)
 
-- `playwright.config.ts` defines a single Chromium/Desktop Chrome project, records traces/videos on failure, and can auto-start `npm run dev` unless `PLAYWRIGHT_SKIP_WEBSERVER=1`.
+- `playwright.config.ts` defines a single Chromium/Desktop Chrome project, records traces/videos on failure, and can auto-start the Astro dev server (it uses `npm run dev:e2e` so `.env.test` is loaded automatically unless `PLAYWRIGHT_SKIP_WEBSERVER=1`).
 - Page Object Model lives under `tests/e2e/page-objects/`; reuse these classes to keep selectors resilient and interactions isolated.
 - Use `npm run test:e2e:ui` or `npm run test:e2e:debug` when you need the inspector/trace viewer, and `npm run test:e2e:codegen` to scaffold new flows.
 - Visual assertions (`expect(page).toHaveScreenshot()`) are ready to use—commit golden images under `tests/e2e/__screenshots__` when you add them.
+
+#### Test credentials
+
+Playwright loads `.env.test` (see `playwright.config.ts`) so you can provide dedicated credentials without touching `.env`. Populate the following variables before running the onboarding flow or any spec that requires an authenticated user:
+
+```
+E2E_USERNAME_ID=<supabase-user-id>
+E2E_USERNAME=<email used on the login form>
+E2E_PASSWORD=<password>
+```
+
+The `tests/e2e/support/e2eUser.ts` helper throws a descriptive error if any of these values are missing, preventing false-positive runs with blank credentials.
 
 ## Project Structure
 
 ```md
 .
 ├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
+│ ├── layouts/ # Astro layouts
+│ ├── pages/ # Astro pages
+│ │ └── api/ # API endpoints
+│ ├── components/ # UI components (Astro & React)
+│ └── assets/ # Static assets
+├── public/ # Public assets
 ```
 
 ## AI Development Support

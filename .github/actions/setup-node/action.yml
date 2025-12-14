@@ -1,0 +1,26 @@
+name: Setup Node workspace
+description: Checkout repository, setup Node.js via .nvmrc and install dependencies
+
+inputs:
+  cache-dependency-path:
+    description: Path to dependency lockfile for npm cache
+    required: false
+    default: package-lock.json
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
+

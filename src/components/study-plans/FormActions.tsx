@@ -19,7 +19,13 @@ export function FormActions({ onCancel, isSubmitting, isValid, disabledReason }:
   return (
     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
       {/* Cancel Button */}
-      <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={onCancel}
+        disabled={isSubmitting}
+        data-test-id="create-plan-cancel-button"
+      >
         Anuluj
       </Button>
 
@@ -28,7 +34,12 @@ export function FormActions({ onCancel, isSubmitting, isValid, disabledReason }:
         <TooltipTrigger asChild>
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
           <span tabIndex={isDisabled ? 0 : -1}>
-            <Button type="submit" disabled={isDisabled} aria-label={isDisabled ? disabledReason : "Utwórz plan nauki"}>
+            <Button
+              type="submit"
+              disabled={isDisabled}
+              aria-label={isDisabled ? disabledReason : "Utwórz plan nauki"}
+              data-test-id="create-plan-submit-button"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />

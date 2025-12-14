@@ -12,14 +12,19 @@ export const onRequest = defineMiddleware(async ({ request, cookies, locals, url
     data: { user },
   } = await supabase.auth.getUser();
 
-  locals.user = user ?? null;
+  locals.user = user
+    ? {
+        id: user.id,
+        email: user.email ?? null,
+      }
+    : null;
 
-  if (!user && url.pathname.startsWith("/app")) {
+  if (!locals.user && url.pathname.startsWith("/app")) {
     const returnUrl = encodeURIComponent(`${url.pathname}${url.search}`);
     return redirect(`/login?returnUrl=${returnUrl}`);
   }
 
-  if (user && PUBLIC_PAGES.has(url.pathname)) {
+  if (locals.user && PUBLIC_PAGES.has(url.pathname)) {
     return redirect("/app/calendar");
   }
 

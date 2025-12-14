@@ -81,7 +81,11 @@ export function LoginForm() {
       </Alert>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6">
+        <form
+          onSubmit={form.handleSubmit(handleSubmitForm)}
+          className="space-y-6"
+          data-test-id="login-form"
+        >
           <FormField
             control={form.control}
             name="email"
@@ -104,6 +108,7 @@ export function LoginForm() {
                       autoComplete="email"
                       placeholder="marta@bloomlearning.com"
                       inputMode="email"
+                      data-test-id="login-email-input"
                     />
                   </FormControl>
                   <FormMessage />
@@ -125,6 +130,7 @@ export function LoginForm() {
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       placeholder="••••••••"
+                      data-test-id="login-password-input"
                     />
                   </FormControl>
                   <button
@@ -132,6 +138,7 @@ export function LoginForm() {
                     aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute inset-y-0 right-2 select-none rounded-full p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    data-test-id="login-toggle-password-visibility"
                   >
                     {showPassword ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
                   </button>
@@ -152,6 +159,7 @@ export function LoginForm() {
                       checked={field.value}
                       onCheckedChange={(checked) => field.onChange(checked === true)}
                       aria-label="Zapamiętaj mnie na tym urządzeniu"
+                      data-test-id="login-remember-checkbox"
                     />
                   </FormControl>
                   <div className="leading-none">
@@ -165,12 +173,18 @@ export function LoginForm() {
             <a
               href="/forgot-password"
               className="text-primary text-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              data-test-id="login-forgot-password-link"
             >
               Nie pamiętasz hasła?
             </a>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitDisabled}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitDisabled}
+            data-test-id="login-submit-button"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
@@ -184,7 +198,7 @@ export function LoginForm() {
       </Form>
 
       {formError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" data-test-id="login-error-alert">
           <AlertTitle>Nie udało się zalogować</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
         </Alert>

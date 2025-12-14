@@ -9,12 +9,13 @@ export class HomePage {
   constructor(page: Page) {
     this.page = page;
     this.heroHeading = page.getByRole("heading", { name: /Zastąp ręczne planowanie powtórek/i });
-    this.primaryCta = page.getByRole("link", { name: /Załóż darmowe konto/i });
-    this.secondaryCta = page.getByRole("link", { name: /Zaloguj się/i });
+    this.primaryCta = page.getByTestId("hero-register-cta");
+    this.secondaryCta = page.getByTestId("hero-login-cta");
   }
 
   async goto() {
     await this.page.goto("/");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async expectHeroVisible() {
@@ -26,6 +27,8 @@ export class HomePage {
   async openRegisterCta() {
     await this.primaryCta.click();
   }
+
+  async openLoginCta() {
+    await this.secondaryCta.click();
+  }
 }
-
-

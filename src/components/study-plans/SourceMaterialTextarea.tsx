@@ -29,6 +29,7 @@ export function SourceMaterialTextarea({ value, onChange, error, wordCount }: So
         placeholder="Wklej lub wpisz materiał źródłowy, który chcesz wykorzystać do nauki..."
         aria-invalid={!!error}
         aria-describedby={error ? "source-error" : "source-helper"}
+        data-test-id="create-plan-source-textarea"
       />
 
       {/* Error Message */}
