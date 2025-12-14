@@ -32,7 +32,6 @@ export function AiReviewPage({ planId }: AiReviewPageProps) {
   const [dirtySessions, setDirtySessions] = useState<Record<string, boolean>>({});
   const saveSessionMutation = useUpdateSession();
   const statusUpdateMutation = useUpdateSession({ enableSuccessToast: false, enableErrorToast: false });
-  const quietUpdateSession = useUpdateSession({ enableSuccessToast: false, enableErrorToast: false });
   const error = planError ?? sessionsError;
 
   const groupedSessions = useMemo(() => {
@@ -132,13 +131,12 @@ export function AiReviewPage({ planId }: AiReviewPageProps) {
       if (prev[sessionId] === isDirty) {
         return prev;
       }
-      const next = { ...prev };
       if (isDirty) {
-        next[sessionId] = true;
-      } else {
-        delete next[sessionId];
+        return { ...prev, [sessionId]: true };
       }
-      return next;
+      const { [sessionId]: _removed, ...rest } = prev;
+      void _removed;
+      return rest;
     });
   }, []);
 

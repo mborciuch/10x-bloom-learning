@@ -10,13 +10,17 @@ const originalFetch = globalThis.fetch;
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: { retry: false, cacheTime: 0 },
+      queries: { retry: false, gcTime: 0 },
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const TestQueryClientProvider = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  TestQueryClientProvider.displayName = "TestQueryClientProvider";
+
+  return TestQueryClientProvider;
 };
 
 const plansResponse = (items: StudyPlanListItemDto[]): Paginated<StudyPlanListItemDto> => ({
