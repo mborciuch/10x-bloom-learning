@@ -1,4 +1,9 @@
+import path from "node:path";
+
+import dotenv from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
 const PORT = Number(process.env.PORT ?? 4321);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
@@ -11,10 +16,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   retries: process.env.CI ? 2 : 0,
-  reporter: [
-    ["list"],
-    ["html", { open: "never", outputFolder: "playwright-report" }],
-  ],
+  reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   workers: process.env.CI ? 2 : undefined,
   use: {
     baseURL,
@@ -41,4 +43,3 @@ export default defineConfig({
         timeout: 120_000,
       },
 });
-
