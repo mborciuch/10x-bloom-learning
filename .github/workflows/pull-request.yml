@@ -63,6 +63,7 @@ jobs:
       contents: read
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
