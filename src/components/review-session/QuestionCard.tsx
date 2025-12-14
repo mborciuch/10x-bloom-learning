@@ -21,23 +21,8 @@ export function QuestionCard({ index, total, question, answer, hint, isOpen, onT
     onToggle(!isOpen);
   }, [isOpen, onToggle]);
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLElement>) => {
-      if (event.key === " " || event.key === "Spacebar") {
-        if (event.currentTarget !== event.target) {
-          return;
-        }
-        event.preventDefault();
-        handleToggle();
-      }
-    },
-    [handleToggle]
-  );
-
   return (
     <article
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
       className={cn(
         "group rounded-3xl border border-border/80 bg-card/80 p-5 shadow-sm outline-none transition",
         "focus-visible:ring-2 focus-visible:ring-primary/40",
