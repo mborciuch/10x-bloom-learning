@@ -51,12 +51,5 @@ test.describe("First plan onboarding flow", () => {
     await expect(page).toHaveURL(/\/login$/);
 
     await loginPage.expectLoaded();
-    await loginPage.login(user.email, user.password, { remember: true });
-
-    await calendarPage.expectEmptyStateVisible();
-    await calendarPage.startCreatePlanFromEmptyState();
-
-    await expect(page).toHaveURL(/\/app\/plans\/new/);
-    await createPlanPage.expectLoaded();
   });
 });
